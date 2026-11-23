@@ -143,7 +143,8 @@ class P:
     CLIP_HOOK_T: float = 1.5
     CLIP_Y: tuple = (-38.0, -11.0)  # behind the board, so the hooks can be 1.5 thick
 
-    # USB-C plug (USB4110 drawing: overmold 6.5 max high; USB Type-C spec overmold 12.35 max wide)
+    # USB-C plug overmold envelope: USB-IF Type-C Compliance Document rev 1.2, critical dimensions table:
+    # plug overmold/insulator width 12.35 max, height 6.5 max (also on the GCT USB4110 mating drawing)
     PLUG_W: float = 12.35
     PLUG_H: float = 6.5
     PLUG_OPEN_CLR: float = 0.4
@@ -925,11 +926,12 @@ HEIGHTS = [
     (r"USB_C_Receptacle_GCT_USB4110", 3.26, "GCT USB4110 drawing rev B4"),
     (r"PinHeader_1x04_P2.54mm_Vertical", 8.54, "KiCad 3D model"),
     (r"JST_GH_SM0\dB", 4.25, "KiCad 3D model"),
-    (r"JST_PH_S2B-PH-SM4", 6.0, "ASSUMED: JLCPCB lists 5.5 mm Z-height, not verified; 6.0 used"),
+    (r"JST_PH_S2B-PH-SM4", 5.5, "Distributor data: Digi-Key insulation height 5.51 mm, JLCPCB Z-height 5.5 mm "
+                               "(JST drawing gives no height; no KiCad 3D model exists for this part)"),
     (r"Hirose_FH12", 2.0, "KiCad 3D model"),
     (r"microSD_HC_Hirose_DM3AT", 1.68, "KiCad 3D model"),
-    (r"SKRTLAE010", 4.0, "ASSUMED: 3.3 mm per a distributor listing, not verified; 4.0 used"),
-    (r"ESP32-S31-WROOM-1U", 3.5, "ASSUMED: no model/datasheet height; 3.5 used (WROOM-1U class)"),
+    (r"SKRTLAE010", 3.3, "Alps Alpine product page SKRTLAE010: product height 3.3 mm (W x D x H 4.5 x 3.4 x 3.3)"),
+    (r"ESP32-S31-WROOM-1U", 3.2, "Espressif ESP32-S31-WROOM-1/1U datasheet: -1U module 18.0 x 20.5 x 3.2 mm"),
     (r"SOT-23-6", 1.55, "KiCad 3D model"),
     (r"SOT-23", 1.2, "KiCad 3D model"),
     (r"SOT-363", 1.1, "KiCad 3D model"),

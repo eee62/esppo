@@ -13,7 +13,7 @@ A printable demo mouse shell. It has two moving front keys and a scroll wheel wi
 | 3. Total height ≤ 38 mm | **Pass.** Keys top out at 34.0 mm and the wheel at 37.5 mm. |
 | 4. USB-C opening lines up with J5 | **Pass, with a deviation.** The opening is centred on J5 (Y 30.00, Z 16.78), but in the **left** side wall, as your revised orientation requires. It is not at the front: see Conflicts. |
 | 5a. Walls ≥ 1.5 mm | **Pass.** The exact surface-to-surface minimum is 1.500 mm. The 1.0 mm living hinges are intentionally thinner. |
-| 5b. No edge sharper than 0.5 mm radius | **Not met on 18 edges, all on the top part's key slots.** 16 edges are unrounded and 2 have only 0.3–0.4 mm. See below. |
+| 5b. No edge sharper than 0.5 mm radius | **Pass, with 18 accepted exceptions** inside the left key's slot on the top part (16 unrounded, 2 at 0.3–0.4 mm). Accepted as-is on 2026-11-23; geometry not changed. See [Known exceptions](#known-exceptions). |
 | 6. Assembly exported, clearances reported | **Done.** See `assembly.step` and the tables below. |
 
 ## Files
@@ -77,7 +77,7 @@ The script parses `ESP32-S31-Vision-Pro-RevC.kicad_pcb` and stops with an error 
 | Wheel mount | Two 1.6 mm brackets from the ceiling. The axle seat is Ø2.15 with a 1.7 mm snap throat. |
 | Battery hold | 4 rib standoffs (2 mm), a rear stop, a front lip over the cell's front edge and 4 flexing clips (1.3 mm arms, 0.9 mm hook) |
 | Board mount | 4 bosses from the top clamp the board top at H1–H4. 2 base columns support H1/H2 from below. |
-| USB-C opening | 13.15 × 7.3 mm: the plug overmold plus 0.4 mm clearance all round. Height 6.5 mm max is from the GCT drawing. Width 12.35 mm is the USB Type-C overmold limit as I recall it, not checked against the spec. The outer skin is 7.5 mm from the J5 face, and the plug stops 0.5 mm short of it. |
+| USB-C opening | 13.15 × 7.3 mm: the plug overmold plus 0.4 mm clearance all round. The overmold limits (12.35 mm wide, 6.5 mm high, max) are from the [USB-IF Type-C Compliance Document rev 1.2](https://www.usb.org/sites/default/files/USB_Type-C_Compliance_Document_rev_1_2.pdf), critical-dimensions table. The outer skin is 7.5 mm from the J5 face, and the plug stops 0.5 mm short of it. |
 
 ## Clearances (from `assembly.step`, minimum between surfaces)
 
@@ -86,8 +86,8 @@ The script parses `ESP32-S31-Vision-Pro-RevC.kicad_pcb` and stops with an error 
 | key plunger – switch plunger | **0.200** | gap at rest, both keys |
 | top (axle seats) – wheel | 0.075 | Ø2.15 seat on a Ø2.0 axle |
 | detent tip – wheel ring (at rest, in a valley) | 0.100 | by design |
-| wheel – board (U8 module, height assumed 3.5) | 1.653 | |
-| key_L plunger – board | 2.312 | |
+| wheel – board (U8 module, 3.2 mm per Espressif) | 1.883 | |
+| key_L plunger – board (J1) | 2.401 | |
 | top – nearest board component (J_RADAR1) | 1.350 | |
 | base – nearest board component (J6) | 2.405 | |
 | battery – base walls, clips, stops, columns | **1.000** | not counting the ribs it rests on |
@@ -107,6 +107,31 @@ Parts that touch on purpose (overlap is still 0):
 - Screw heads in their seats.
 - Base and top at the split line.
 
+## Known exceptions
+
+**Accepted as-is (2026-11-23).** The 18 edges below are sharper than the 0.5 mm minimum. They are all inside the left key's 0.4 mm slot on `top`, and the geometry is deliberately left unchanged. Cause: the slot's outer wall (x −32.10) lands 0.10 mm inside the start of the 3 mm side fillet (x −32.00), and OCC cannot round edges that close to tangent. They are not on the outer touch surface. `shell_model.py` still lists them on every rebuild (`checks.json` → `sharp_edges_left.top` and `reduced_radius_edges`); this table must match that list.
+
+| ID | Radius | Edge midpoint (x, y, z) mm | Length mm |
+|---|---|---|---:|
+| E1 | none (sharp) | (-32.1, 19.53, 32.35) | 18.73 |
+| E2 | none (sharp) | (-32.1, 29.15, 32.35) | 0.5 |
+| E3 | none (sharp) | (-32.1, 9.84, 32.48) | 0.73 |
+| E4 | none (sharp) | (-32.1, 9.71, 33.15) | 0.67 |
+| E5 | none (sharp) | (-32.1, 29.04, 32.51) | 0.81 |
+| E6 | none (sharp) | (-32.1, 9.87, 33.85) | 0.82 |
+| E7 | none (sharp) | (-32.1, 28.9, 33.19) | 0.62 |
+| E8 | none (sharp) | (-32.1, 19.57, 34.0) | 18.67 |
+| E9 | none (sharp) | (-32.1, 29.05, 33.85) | 0.78 |
+| E10 | none (sharp) | (-32.1, 29.15, 34.0) | 0.5 |
+| E11 | none (sharp) | (-31.53, 11.53, 32.52) | 0.37 |
+| E12 | none (sharp) | (-31.68, 11.77, 32.47) | 0.22 |
+| E13 | none (sharp) | (-31.7, 19.94, 32.46) | 16.12 |
+| E14 | none (sharp) | (-31.7, 28.35, 32.61) | 0.79 |
+| E15 | none (sharp) | (-31.7, 28.5, 33.24) | 0.53 |
+| E16 | none (sharp) | (-31.52, 28.32, 33.88) | 0.96 |
+| E17 | 0.4 mm | (-10.88, 28.32, 32.62) | 0.96 |
+| E18 | 0.3 mm | (-31.7, 10.85, 32.95) | 1.69 |
+
 ## Conflicts and deviations
 
 1. **USB-C is not at the front (orientation conflict, reported in the first round).**
@@ -114,7 +139,7 @@ Parts that touch on purpose (overlap is still 0):
    - At 0° and 180° the keys form a row, but J5 faces the left or right side.
    - At 90° and 270° the keys sit one behind the other, 35.85 mm apart. Only at 270° does J5 face the front.
    - Your revised brief fixed 0° with the opening in the left wall, and that is what was built.
-2. **18 edges on the top part are sharper than 0.5 mm.** Base, wheel and plungers have none.
+2. **18 edges on the top part are sharper than 0.5 mm (accepted, see [Known exceptions](#known-exceptions)).** Base, wheel and plungers have none.
    - **16 have no fillet**, all around the left key's left slot.
      - The slot's outer wall (x −32.10) lands 0.10 mm inside the start of the 3 mm side fillet (x −32.00). OCC cannot round edges that close to tangent.
      - They are the slot's top and bottom edges plus the corner edges at its ends, and the tongue's left underside edge. All are inside the 0.4 mm slot.
@@ -132,14 +157,22 @@ Parts that touch on purpose (overlap is still 0):
 | Item | Value used | Why |
 |---|---|---|
 | Battery | 6 × 60 × 90 mm pouch | Given in the brief, not yet verified |
-| USB-C plug overmold width | 12.35 mm | From memory of the USB Type-C spec, not checked here. A larger overmold will not fit the opening. |
 | PTS645 travel | not in the C&K datasheet I read | The tongue can move more than 1 mm at the switch. The 0.2 mm gap plus about 0.25 mm of travel needs a hinge rotation of about 0.05 rad, which gives about 1.6 % strain in the 1.0 mm hinge (estimate). |
-| ESP32-S31-WROOM-1U height | 3.5 mm | No datasheet height found. It sets the 1.65 mm wheel-to-board clearance. |
-| JST PH S2B-PH-SM4-TB (J1) height | 6.0 mm | JLCPCB lists 5.5 mm, not confirmed. |
-| Alps SKRTLAE010 (SW_RST1, SW_BOOT1) height | 4.0 mm | One distributor lists 3.3 mm, not confirmed. |
+| JST PH S2B-PH-SM4-TB (J1) height | 5.5 mm | Distributor data only: Digi-Key insulation height 5.51 mm and JLCPCB Z-height 5.5 mm. The JST catalog drawing has no height, and KiCad has no 3D model for this part. |
 | Small QFN/DFN/SON parts | 1.0 mm | Envelope only |
 
-Every other height comes from KiCad's 3D models or the GCT USB4110 drawing (3.26 mm). Each component is modelled as its F.Fab body outline × height.
+Sourced heights (updated 2026-11-23):
+
+| Part | Height | Source |
+|---|---:|---|
+| ESP32-S31-WROOM-1U (U8) | 3.2 mm | [Espressif ESP32-S31-WROOM-1/1U datasheet](https://documentation.espressif.com/esp32-s31-wroom-1_wroom-1u_datasheet_en.html): 18.0 × 20.5 × 3.2 mm |
+| Alps SKRTLAE010 (SW_RST1, SW_BOOT1) | 3.3 mm | [Alps Alpine product page](https://tech.alpsalpine.com/e/products/detail/SKRTLAE010/): W × D × H 4.5 × 3.4 × 3.3 |
+| GCT USB4110 (J5) | 3.26 mm | [GCT drawing](https://gct.co/files/drawings/usb4110.pdf) |
+| USB-C plug overmold | 12.35 × 6.5 mm max | [USB-IF Type-C Compliance Document rev 1.2](https://www.usb.org/sites/default/files/USB_Type-C_Compliance_Document_rev_1_2.pdf) |
+
+The Rev C project ships no 3D model files of its own. Its footprints point at the standard KiCad library, which has no model for U8, J1, J5 or SW_RST1/SW_BOOT1, so those come from datasheets. Every other height comes from the KiCad library 3D models. Each component is modelled as its F.Fab body outline × height.
+
+Changing these heights moved three clearances and changed no check result: wheel–U8 1.653 → 1.883 mm, key_L–J1 2.312 → 2.401 mm, key_R–U8 5.21 → 5.36 mm.
 
 ## Assembly
 
@@ -154,7 +187,11 @@ The battery cannot be swapped without opening the base, and there is no battery 
 ## Printing
 
 - **Process:** MJF or SLS PA12 (no supports, so the 0.4 mm slots and hinges come out clean).
-- **0.4 mm slots:** check them against your service's minimum gap. [Materialise](https://www.materialise.com/en/academy/industrial/design-am/pa12-mjf) lists 0.4 mm clearance between assembled parts. [Stratasys Direct](https://www.stratasys.com/siteassets/sdm/content---website-storage/design-guides/dg_mjf_stratasys_direct_03062023.pdf) lists 0.5 mm. [Protolabs](https://www.protolabs.com/resources/design-tips/how-to-design-for-nylon-3d-printing/) recommends 0.76–1 mm. If your service needs more, change `SLOT` and rebuild. The tongue stays centred on the switch.
+- **JLC3DP rules (checked 2026-11-23 in the [JLC3DP design guideline](https://jlc3dp.com/help/article/3D-Printing-Design-Guideline)):**
+  - The minimum clearance **between moving parts** is **0.6 mm** for MJF and SLS nylon and 0.5 mm for SLA resin. The key tongues move, so the 0.4 mm slots are **below JLC3DP's limit** and may fuse. Setting `SLOT = 0.6` and rebuilding would meet it; the left-key rim outside the slot would then be 2.7 mm. Not changed here: that is your call.
+  - Recommended nylon wall is 2.0 mm for parts 100–200 mm long. The shell is 114 mm long with 1.5 mm walls. The quote upload page itself only asks for walls over 1.2 mm and thinnest parts at least 0.8 mm, and raised no warning for `top` or `base`.
+  - `keys.stl` is flagged as an assembly (2 bodies). Upload the two plungers as separate files.
+- **0.4 mm slots, other services:** check them against your service's minimum gap. [Materialise](https://www.materialise.com/en/academy/industrial/design-am/pa12-mjf) lists 0.4 mm clearance between assembled parts. [Stratasys Direct](https://www.stratasys.com/siteassets/sdm/content---website-storage/design-guides/dg_mjf_stratasys_direct_03062023.pdf) lists 0.5 mm. [Protolabs](https://www.protolabs.com/resources/design-tips/how-to-design-for-nylon-3d-printing/) recommends 0.76–1 mm. If your service needs more, change `SLOT` and rebuild. The tongue stays centred on the switch.
 - **Hinges:** published MJF PA12 living-hinge minimums are 0.5 mm ([Stratasys Direct](https://www.stratasys.com/siteassets/sdm/content---website-storage/design-guides/dg_mjf_stratasys_direct_03062023.pdf), [Materialise](https://reseller.materialise.com/en/manufacturing/materials/pa-12-mjf/design-guidelines)). The 1.0 mm hinge here is stiffer and is fine for a demo.
 - **Orientation:** print `top` with its top surface facing up, so the hinge grooves are not built parallel to Z ([guidance](https://rapidmade.com/designing-snap-fits-and-living-hinges-for-mjf-3d-printing-a-complete-guide-for-pa11-pa12-and-pp/)).
 
