@@ -1,0 +1,4 @@
+(version 1)
+(rule "SKRTLAE010 land pattern: peg holes vs own pads"
+	(condition "(A.memberOfFootprint('SW_RST1') && B.memberOfFootprint('SW_RST1')) || (A.memberOfFootprint('SW_BOOT1') && B.memberOfFootprint('SW_BOOT1'))")
+	(constraint hole_clearance (min 0mm)))
