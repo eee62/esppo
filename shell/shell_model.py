@@ -94,7 +94,7 @@ class P:
     # keys
     KEY_W: float = 21.0
     KEY_L: float = 18.0
-    SLOT: float = 0.4
+    SLOT: float = 0.6              # JLC3DP minimum clearance between moving parts (MJF/SLS nylon)
     HINGE_T: float = 1.0            # living hinge thickness
     HINGE_LEN: float = 2.0          # hinge band length along Y
     RELIEF_D: float = 1.0           # stress-relief hole at each slot end (radius 0.5)
@@ -1214,8 +1214,11 @@ def close_mesh_cracks(path):
 
 
 def export(parts, refs, outdir=HERE):
+    # keys.* holds both plungers (2 bodies); key_L.* / key_R.* are single-body files for print services
+    # that reject multi-body uploads (JLC3DP flags them as an "assembly").
     out = {"base": parts["base"], "top": parts["top"], "wheel": parts["wheel"],
-           "keys": cq.Compound.makeCompound([parts["key_L"], parts["key_R"]])}
+           "keys": cq.Compound.makeCompound([parts["key_L"], parts["key_R"]]),
+           "key_L": parts["key_L"], "key_R": parts["key_R"]}
     for k, s in out.items():
         cq.exporters.export(s, os.path.join(outdir, f"{k}.step"))
         stl = os.path.join(outdir, f"{k}.stl")
@@ -1233,7 +1236,7 @@ def export(parts, refs, outdir=HERE):
 def stl_report():
     import trimesh
     out = {}
-    for k in ("base", "top", "keys", "wheel"):
+    for k in ("base", "top", "keys", "key_L", "key_R", "wheel"):
         m = trimesh.load(os.path.join(HERE, f"{k}.stl"))
         parts = m.split(only_watertight=False)
         out[k] = dict(watertight=bool(m.is_watertight), bodies=len(parts), triangles=int(len(m.faces)),

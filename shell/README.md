@@ -13,7 +13,7 @@ A printable demo mouse shell. It has two moving front keys and a scroll wheel wi
 | 3. Total height ≤ 38 mm | **Pass.** Keys top out at 34.0 mm and the wheel at 37.5 mm. |
 | 4. USB-C opening lines up with J5 | **Pass, with a deviation.** The opening is centred on J5 (Y 30.00, Z 16.78), but in the **left** side wall, as your revised orientation requires. It is not at the front: see Conflicts. |
 | 5a. Walls ≥ 1.5 mm | **Pass.** The exact surface-to-surface minimum is 1.500 mm. The 1.0 mm living hinges are intentionally thinner. |
-| 5b. No edge sharper than 0.5 mm radius | **Pass, with 18 accepted exceptions** inside the left key's slot on the top part (16 unrounded, 2 at 0.3–0.4 mm). Accepted as-is on 2026-11-23; geometry not changed. See [Known exceptions](#known-exceptions). |
+| 5b. No edge sharper than 0.5 mm radius | **24 exceptions on the top part** (21 unrounded, 3 at 0.3–0.4 mm). 18 were accepted on 2026-11-23 with 0.4 mm slots; the change to 0.6 mm slots moved them and added 6, which are **not yet accepted**. See [Known exceptions](#known-exceptions). |
 | 6. Assembly exported, clearances reported | **Done.** See `assembly.step` and the tables below. |
 
 ## Files
@@ -23,7 +23,9 @@ A printable demo mouse shell. It has two moving front keys and a scroll wheel wi
 | `shell_model.py` | Parametric source. All dimensions are in the `P` dataclass at the top. |
 | `base.stl` / `.step` | Removable bottom cover: floor, lower walls (z 0–14), battery pocket and clips, cover-screw columns |
 | `top.stl` / `.step` | Hump (z 14–34) with the two key tongues and living hinges, wheel opening and brackets, detent arm, board bosses |
-| `keys.stl` / `.step` | The 2 key plungers (2 bodies in one file; print 1 of each). Each presses into the socket under its tongue. |
+| `keys.stl` / `.step` | The 2 key plungers (2 bodies in one file). Each presses into the socket under its tongue. |
+| `key_L.stl` / `.step`, `key_R.stl` / `.step` | The same plungers, one per file, for services that reject multi-body files (JLC3DP) |
+| `render_shell.py`, `renders/*.png` | Renderer and the 5 views: isometric front-left and rear-right, top, left side, key cross-section |
 | `wheel.stl` / `.step` | Scroll wheel in one piece: tyre, 24-detent wavy ring and 2 mm axle stubs |
 | `assembly.step` | All parts in place, plus reference models of the board, switches, battery and screw heads |
 | `checks.json` | Every check result: pairwise clearances, walls, edges, STL watertightness |
@@ -68,7 +70,7 @@ The script parses `ESP32-S31-Vision-Pro-RevC.kicad_pcb` and stops with an error 
 | Hump rounding | R10 where the vertical wall turns into the taper, R12 at the front top, R25 at the rear top (palm), R3 along the top edge |
 | Sides | Vertical over the full length, so there is no taper at the keys |
 | Wall / floor | 1.5 / 1.5 mm |
-| Key tongues | 21 × 18 mm with 0.4 mm slots on three sides. The slots run 1.25 mm past the hinge line and end in Ø1.0 relief holes. |
+| Key tongues | 21 × 18 mm with 0.6 mm slots on three sides (JLC3DP minimum for moving parts). The slots run 1.25 mm past the hinge line and end in Ø1.0 relief holes. |
 | Living hinge | A round groove (R1.25) under each tongue's rear edge leaves **1.0 mm** of skin. |
 | Key plungers | Ø4.5 body, Ø3.0 tip with a 45° taper, Ø2.4 peg into a Ø2.6 × 2.5 mm socket. Each tip rests **0.2 mm** above its switch plunger. |
 | Wheel | Ø20 × 8 mm, made of a tyre (5.3 mm wide), a 1.2 mm groove and a 1.5 mm detent ring. Axle stubs are Ø2.0 × 2.5 mm. The top is 3.5 mm above the shell. |
@@ -109,28 +111,40 @@ Parts that touch on purpose (overlap is still 0):
 
 ## Known exceptions
 
-**Accepted as-is (2026-11-23).** The 18 edges below are sharper than the 0.5 mm minimum. They are all inside the left key's 0.4 mm slot on `top`, and the geometry is deliberately left unchanged. Cause: the slot's outer wall (x −32.10) lands 0.10 mm inside the start of the 3 mm side fillet (x −32.00), and OCC cannot round edges that close to tangent. They are not on the outer touch surface. `shell_model.py` still lists them on every rebuild (`checks.json` → `sharp_edges_left.top` and `reduced_radius_edges`); this table must match that list.
+**Status.** On 2026-11-23 you accepted 18 sharp edges inside the left key's 0.4 mm slot. The slot was then widened to 0.6 mm (JLC3DP's minimum clearance for moving parts), which moves every slot edge, so the list was regenerated. It now has **24 edges** (21 unrounded, 3 with a 0.3–0.4 mm fillet). That is 6 more than before, and they are **not yet accepted**:
+- **The two long edges of the left key's hinge groove** (about 20 mm each, at y 9.5 and 11.5, on the underside) are now unrounded.
+- **One right-key hinge-groove end edge** (0.5 mm long) now has only a 0.4 mm fillet. It is the only exception on the right key.
 
-| ID | Radius | Edge midpoint (x, y, z) mm | Length mm |
-|---|---|---|---:|
-| E1 | none (sharp) | (-32.1, 19.53, 32.35) | 18.73 |
-| E2 | none (sharp) | (-32.1, 29.15, 32.35) | 0.5 |
-| E3 | none (sharp) | (-32.1, 9.84, 32.48) | 0.73 |
-| E4 | none (sharp) | (-32.1, 9.71, 33.15) | 0.67 |
-| E5 | none (sharp) | (-32.1, 29.04, 32.51) | 0.81 |
-| E6 | none (sharp) | (-32.1, 9.87, 33.85) | 0.82 |
-| E7 | none (sharp) | (-32.1, 28.9, 33.19) | 0.62 |
-| E8 | none (sharp) | (-32.1, 19.57, 34.0) | 18.67 |
-| E9 | none (sharp) | (-32.1, 29.05, 33.85) | 0.78 |
-| E10 | none (sharp) | (-32.1, 29.15, 34.0) | 0.5 |
-| E11 | none (sharp) | (-31.53, 11.53, 32.52) | 0.37 |
-| E12 | none (sharp) | (-31.68, 11.77, 32.47) | 0.22 |
-| E13 | none (sharp) | (-31.7, 19.94, 32.46) | 16.12 |
-| E14 | none (sharp) | (-31.7, 28.35, 32.61) | 0.79 |
-| E15 | none (sharp) | (-31.7, 28.5, 33.24) | 0.53 |
-| E16 | none (sharp) | (-31.52, 28.32, 33.88) | 0.96 |
-| E17 | 0.4 mm | (-10.88, 28.32, 32.62) | 0.96 |
-| E18 | 0.3 mm | (-31.7, 10.85, 32.95) | 1.69 |
+The rest are still the left key's slot.
+
+**Cause:** the left slot's outer wall (now x −32.30) lies inside the 3 mm side fillet (which starts at x −32.00), and OCC cannot round edges that close to tangent. None of these edges is on the outer touch surface; all are inside a slot or under a tongue. `shell_model.py` lists them on every rebuild (`checks.json` → `sharp_edges_left.top` and `reduced_radius_edges`); this table matches that list.
+
+| ID | Radius | Key | Edge midpoint (x, y, z) mm | Length mm |
+|---|---|---|---|---:|
+| E1 | none (sharp) | left key | (-21.2, 9.5, 32.5) | 19.66 |
+| E2 | none (sharp) | left key | (-32.3, 19.6, 32.26) | 19.01 |
+| E3 | none (sharp) | left key | (-32.3, 29.35, 32.26) | 0.5 |
+| E4 | none (sharp) | left key | (-31.32, 9.55, 32.57) | 0.6 |
+| E5 | none (sharp) | left key | (-31.7, 10.53, 33.0) | 1.38 |
+| E6 | none (sharp) | left key | (-31.67, 9.76, 32.76) | 0.29 |
+| E7 | none (sharp) | left key | (-11.13, 9.54, 32.55) | 0.51 |
+| E8 | none (sharp) | left key | (-10.8, 9.72, 32.73) | 0.33 |
+| E9 | none (sharp) | left key | (-10.7, 10.16, 32.95) | 0.69 |
+| E10 | none (sharp) | left key | (-10.74, 11.17, 32.81) | 1.41 |
+| E11 | none (sharp) | left key | (-21.25, 11.5, 32.5) | 20.1 |
+| E12 | none (sharp) | left key | (-31.34, 11.5, 32.5) | 0.09 |
+| E13 | none (sharp) | left key | (-31.63, 11.41, 32.61) | 0.61 |
+| E14 | none (sharp) | left key | (-32.3, 9.78, 32.37) | 0.68 |
+| E15 | none (sharp) | left key | (-32.3, 9.65, 33.05) | 0.75 |
+| E16 | none (sharp) | left key | (-32.3, 29.24, 32.43) | 0.82 |
+| E17 | none (sharp) | left key | (-32.3, 9.82, 33.82) | 0.88 |
+| E18 | none (sharp) | left key | (-32.3, 29.1, 33.14) | 0.67 |
+| E19 | none (sharp) | left key | (-32.3, 19.66, 33.98) | 18.88 |
+| E20 | none (sharp) | left key | (-32.3, 29.25, 33.84) | 0.79 |
+| E21 | none (sharp) | left key | (-32.3, 29.35, 33.98) | 0.5 |
+| E22 | 0.4 mm | left key | (-10.88, 28.32, 32.62) | 0.96 |
+| E23 | 0.3 mm | left key | (-31.52, 28.32, 33.88) | 0.96 |
+| E24 | 0.4 mm | right key | (4.58, 11.04, 32.55) | 0.51 |
 
 ## Conflicts and deviations
 
@@ -139,13 +153,7 @@ Parts that touch on purpose (overlap is still 0):
    - At 0° and 180° the keys form a row, but J5 faces the left or right side.
    - At 90° and 270° the keys sit one behind the other, 35.85 mm apart. Only at 270° does J5 face the front.
    - Your revised brief fixed 0° with the opening in the left wall, and that is what was built.
-2. **18 edges on the top part are sharper than 0.5 mm (accepted, see [Known exceptions](#known-exceptions)).** Base, wheel and plungers have none.
-   - **16 have no fillet**, all around the left key's left slot.
-     - The slot's outer wall (x −32.10) lands 0.10 mm inside the start of the 3 mm side fillet (x −32.00). OCC cannot round edges that close to tangent.
-     - They are the slot's top and bottom edges plus the corner edges at its ends, and the tongue's left underside edge. All are inside the 0.4 mm slot.
-     - I tried a 2.5 mm side fillet instead: it left 33 sharp edges, so it does not help.
-     - A larger side fillet is untested and would go against the brief.
-   - **2 have reduced radii.** One edge at the right end of the left key's front slot has 0.4 mm. The left key's hinge-groove end has 0.3 mm. Locations are in `checks.json` → `reduced_radius_edges`.
+2. **24 edges on the top part are sharper than 0.5 mm** (see [Known exceptions](#known-exceptions)). Base, wheel and plungers have none. With 0.4 mm slots it was 18. A 2.5 mm side fillet was tried at 0.4 mm and made it worse (33).
 3. **Thin sections that are intentional:**
    - The living hinges are 1.0 mm, as the brief asks.
    - The split line has 0.5 mm rounds on both parts, which form a small V-groove.
@@ -186,12 +194,12 @@ The battery cannot be swapped without opening the base, and there is no battery 
 
 ## Printing
 
-- **Process:** MJF or SLS PA12 (no supports, so the 0.4 mm slots and hinges come out clean).
+- **Process:** MJF or SLS nylon (no supports, so the 0.6 mm slots and hinges come out clean).
 - **JLC3DP rules (checked 2026-11-23 in the [JLC3DP design guideline](https://jlc3dp.com/help/article/3D-Printing-Design-Guideline)):**
-  - The minimum clearance **between moving parts** is **0.6 mm** for MJF and SLS nylon and 0.5 mm for SLA resin. The key tongues move, so the 0.4 mm slots are **below JLC3DP's limit** and may fuse. Setting `SLOT = 0.6` and rebuilding would meet it; the left-key rim outside the slot would then be 2.7 mm. Not changed here: that is your call.
+  - The minimum clearance **between moving parts** is **0.6 mm** for MJF and SLS nylon and 0.5 mm for SLA resin. The slots are now 0.6 mm (`SLOT = 0.6`), so they meet it. The left-key rim outside the slot is 2.7 mm.
   - Recommended nylon wall is 2.0 mm for parts 100–200 mm long. The shell is 114 mm long with 1.5 mm walls. The quote upload page itself only asks for walls over 1.2 mm and thinnest parts at least 0.8 mm, and raised no warning for `top` or `base`.
-  - `keys.stl` is flagged as an assembly (2 bodies). Upload the two plungers as separate files.
-- **0.4 mm slots, other services:** check them against your service's minimum gap. [Materialise](https://www.materialise.com/en/academy/industrial/design-am/pa12-mjf) lists 0.4 mm clearance between assembled parts. [Stratasys Direct](https://www.stratasys.com/siteassets/sdm/content---website-storage/design-guides/dg_mjf_stratasys_direct_03062023.pdf) lists 0.5 mm. [Protolabs](https://www.protolabs.com/resources/design-tips/how-to-design-for-nylon-3d-printing/) recommends 0.76–1 mm. If your service needs more, change `SLOT` and rebuild. The tongue stays centred on the switch.
+  - `keys.stl` is flagged as an assembly (2 bodies). Upload `key_L.stl` and `key_R.stl` instead (one plunger each).
+- **Slots, other services:** check the 0.6 mm slots against your service's minimum gap. [Materialise](https://www.materialise.com/en/academy/industrial/design-am/pa12-mjf) lists 0.4 mm clearance between assembled parts. [Stratasys Direct](https://www.stratasys.com/siteassets/sdm/content---website-storage/design-guides/dg_mjf_stratasys_direct_03062023.pdf) lists 0.5 mm. [Protolabs](https://www.protolabs.com/resources/design-tips/how-to-design-for-nylon-3d-printing/) recommends 0.76–1 mm. If your service needs more, change `SLOT` and rebuild. The tongue stays centred on the switch.
 - **Hinges:** published MJF PA12 living-hinge minimums are 0.5 mm ([Stratasys Direct](https://www.stratasys.com/siteassets/sdm/content---website-storage/design-guides/dg_mjf_stratasys_direct_03062023.pdf), [Materialise](https://reseller.materialise.com/en/manufacturing/materials/pa-12-mjf/design-guidelines)). The 1.0 mm hinge here is stiffer and is fine for a demo.
 - **Orientation:** print `top` with its top surface facing up, so the hinge grooves are not built parallel to Z ([guidance](https://rapidmade.com/designing-snap-fits-and-living-hinges-for-mjf-3d-printing-a-complete-guide-for-pa11-pa12-and-pp/)).
 
