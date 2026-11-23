@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "S31_Vision")(type "KiCad")(uri "${KIPRJMOD}/S31_Vision.kicad_sym")(options "")(descr "ESP32-S31 Vision Pro project symbols"))
+)
