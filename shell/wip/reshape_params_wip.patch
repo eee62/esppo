@@ -1,0 +1,77 @@
+diff --git a/shell/shell_model.py b/shell/shell_model.py
+index 051c18d..c77de0e 100644
+--- a/shell/shell_model.py
++++ b/shell/shell_model.py
+@@ -42,20 +42,20 @@ PCB_IN_ZIP = "mouse-revc-src/ESP32-S31-Vision-Pro-RevC.kicad_pcb"
+ # ----------------------------------------------------------------------------------------------
+ @dataclass
+ class P:
+-    # outer shell
+-    W: float = 70.0                 # outer width (X)
+-    L: float = 114.0                # outer length (Y)
+-    H_BASE: float = 14.0            # base height = split plane between base.stl and top.stl
+-    H_TOP: float = 34.0             # top surface
+-    TAPER_DEG: float = 24.0         # front / rear taper of the hump, from vertical
++    # outer shell: teardrop plan, vertical band up to the split, domed top (see "Outer shape")
++    SIDE: float = 35.03             # half-width over the board / USB zone (35 + 0.03 spline overshoot margin)
++    W_REAR: float = 76.0            # widest point, at y = REAR_C
++    NOSE_Y: float = 70.0            # front tip
++    NOSE_C: float = 50.0            # nose ellipse centre (SIDE x 20); the side is straight behind it
++    WIDEN_Y: float = 22.0           # the side starts widening (cosine ramp) behind this y
++    REAR_C: float = -25.0           # rear ellipse centre (W_REAR / 2 x 35)
++    REAR_Y: float = -60.0           # rear tip
++    H_BASE: float = 14.0            # base height = split plane between base.stl and top.stl = dome start
++    Z_PEAK: float = 34.7            # highest point of the skin
++    PEAK_Y: float = -8.0            # 60 % of the length back from the nose
++    DOME_N: float = 3.0             # superellipse exponent of the dome profile (2 = elliptic, larger = fuller)
+     WALL: float = 1.5
+     FLOOR: float = 1.5
+-    R_PLAN_FRONT: float = 8.0       # plan corner radius, front (<= 8 keeps 1.0 mm board clearance)
+-    R_PLAN_REAR: float = 18.0       # plan corner radius, rear
+-    R_TOP_EDGE: float = 3.0         # fillet where the top / slopes meet the side walls
+-    R_CREASE: float = 10.0          # profile fillet at z = H_BASE, front and rear
+-    R_TOP_FRONT: float = 12.0       # profile fillet top / front slope
+-    R_TOP_REAR: float = 25.0        # profile fillet top / rear slope (palm hump)
+     R_BOTTOM: float = 1.0           # bottom outer edge
+     R_MIN: float = 0.5              # minimum edge radius everywhere else
+ 
+@@ -91,9 +91,13 @@ class P:
+     REAR_SCREW_Y: float = -51.0
+     PILOT_DEPTH_REAR: float = 6.0
+ 
+-    # keys
+-    KEY_W: float = 21.0
+-    KEY_L: float = 18.0
++    # keys: two buttons cut from the skin, symmetric about x = 0, hinged at HINGE_Y, free to the front
++    BTN_X: float = 27.0             # outer edge of each button (|x|)
++    SPINE_HW: float = 6.5           # fixed strip around the wheel between the buttons (half-width)
++    WHEEL_SURROUND: float = 1.5     # spine skin in front of the wheel opening
++    HINGE_Y: float = 10.0           # living hinge line (rear edge of both buttons)
++    LIP: float = 4.0                # fixed skin between the buttons' front slot and the outline
++    TONGUE_CLR: float = 2.0         # fixed features stay this far below the button skin (front travel)
+     SLOT: float = 0.6              # JLC3DP minimum clearance between moving parts (MJF/SLS nylon)
+     HINGE_T: float = 1.0            # living hinge thickness
+     HINGE_LEN: float = 2.0          # hinge band length along Y
+@@ -119,9 +123,9 @@ class P:
+     WHEEL_W: float = 8.0
+     AXLE_D: float = 2.0
+     AXLE_STUB: float = 2.5
+-    WHEEL_PROUD: float = 3.5        # wheel top above the top surface
++    WHEEL_PROUD: float = 3.5        # wheel top above the skin
+     WHEEL_OPEN_CLR: float = 0.6     # opening clearance at each wheel side
+-    WHEEL_OPEN_END: float = 0.6     # opening clearance at front / rear (at the top surface chord)
++    WHEEL_OPEN_END: float = 0.6     # opening clearance at front / rear (where the tire crosses the inner skin)
+     DETENTS: int = 24
+     DETENT_RING_W: float = 1.5
+     DETENT_R_PEAK: float = 9.6      # wave valley radius 0.61 >= R_MIN so the ring edges can be rounded
+@@ -151,8 +155,8 @@ class P:
+     PLUG_STOP: float = 0.5          # overmold stops this far before the receptacle face
+ 
+     @property
+-    def taper_dx(self):
+-        return (self.H_TOP - self.H_BASE) * math.tan(math.radians(self.TAPER_DEG))
++    def W(self):
++        return 2 * self.SIDE
+ 
+     @property
+     def board_z_top(self):

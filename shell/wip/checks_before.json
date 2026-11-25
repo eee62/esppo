@@ -1,0 +1,869 @@
+{
+ "pairs": [
+  {
+   "a": "base",
+   "b": "top",
+   "min_clearance": 0.0,
+   "overlap_mm3": 0.0,
+   "note": "base and top meet at the z = 14 split line"
+  },
+  {
+   "a": "base",
+   "b": "wheel",
+   "min_clearance": 14.426,
+   "overlap_mm3": 0.0,
+   "note": ""
+  },
+  {
+   "a": "base",
+   "b": "key_L",
+   "min_clearance": 12.52,
+   "overlap_mm3": 0.0,
+   "note": ""
+  },
+  {
+   "a": "base",
+   "b": "key_R",
+   "min_clearance": 16.859,
+   "overlap_mm3": 0.0,
+   "note": ""
+  },
+  {
+   "a": "base",
+   "b": "board",
+   "min_clearance": 0.0,
+   "overlap_mm3": 0.0,
+   "note": "2 front columns support the board bottom at H1/H2"
+  },
+  {
+   "a": "base",
+   "b": "switches",
+   "min_clearance": 9.43,
+   "overlap_mm3": 0.0,
+   "note": ""
+  },
+  {
+   "a": "base",
+   "b": "battery",
+   "min_clearance": 0.0,
+   "overlap_mm3": 0.0,
+   "note": "cell rests on 4 rib standoffs"
+  },
+  {
+   "a": "base",
+   "b": "screw_heads",
+   "min_clearance": 0.106,
+   "overlap_mm3": 0.0,
+   "note": "cover screw heads seat in the counterbores"
+  },
+  {
+   "a": "top",
+   "b": "wheel",
+   "min_clearance": 0.075,
+   "overlap_mm3": 0.0,
+   "note": ""
+  },
+  {
+   "a": "top",
+   "b": "key_L",
+   "min_clearance": 0.001,
+   "overlap_mm3": 0.0,
+   "note": "plunger seated in the tongue socket"
+  },
+  {
+   "a": "top",
+   "b": "key_R",
+   "min_clearance": 0.001,
+   "overlap_mm3": 0.0,
+   "note": "plunger seated in the tongue socket"
+  },
+  {
+   "a": "top",
+   "b": "board",
+   "min_clearance": 0.0,
+   "overlap_mm3": 0.0,
+   "note": "4 bosses clamp the board top at the M2.5 holes"
+  },
+  {
+   "a": "top",
+   "b": "switches",
+   "min_clearance": 9.3,
+   "overlap_mm3": 0.0,
+   "note": ""
+  },
+  {
+   "a": "top",
+   "b": "battery",
+   "min_clearance": 4.814,
+   "overlap_mm3": 0.0,
+   "note": ""
+  },
+  {
+   "a": "top",
+   "b": "screw_heads",
+   "min_clearance": 1.6,
+   "overlap_mm3": 0.0,
+   "note": ""
+  },
+  {
+   "a": "wheel",
+   "b": "key_L",
+   "min_clearance": 9.178,
+   "overlap_mm3": 0.0,
+   "note": ""
+  },
+  {
+   "a": "wheel",
+   "b": "key_R",
+   "min_clearance": 9.178,
+   "overlap_mm3": 0.0,
+   "note": ""
+  },
+  {
+   "a": "wheel",
+   "b": "board",
+   "min_clearance": 1.883,
+   "overlap_mm3": 0.0,
+   "note": ""
+  },
+  {
+   "a": "wheel",
+   "b": "switches",
+   "min_clearance": 10.925,
+   "overlap_mm3": 0.0,
+   "note": ""
+  },
+  {
+   "a": "wheel",
+   "b": "battery",
+   "min_clearance": 8.0,
+   "overlap_mm3": 0.0,
+   "note": ""
+  },
+  {
+   "a": "wheel",
+   "b": "screw_heads",
+   "min_clearance": 22.612,
+   "overlap_mm3": 0.0,
+   "note": ""
+  },
+  {
+   "a": "key_L",
+   "b": "key_R",
+   "min_clearance": 31.381,
+   "overlap_mm3": 0.0,
+   "note": ""
+  },
+  {
+   "a": "key_L",
+   "b": "board",
+   "min_clearance": 2.401,
+   "overlap_mm3": 0.0,
+   "note": ""
+  },
+  {
+   "a": "key_L",
+   "b": "switches",
+   "min_clearance": 0.2,
+   "overlap_mm3": 0.0,
+   "note": ""
+  },
+  {
+   "a": "key_L",
+   "b": "battery",
+   "min_clearance": 10.1,
+   "overlap_mm3": 0.0,
+   "note": ""
+  },
+  {
+   "a": "key_L",
+   "b": "screw_heads",
+   "min_clearance": 20.089,
+   "overlap_mm3": 0.0,
+   "note": ""
+  },
+  {
+   "a": "key_R",
+   "b": "board",
+   "min_clearance": 4.5,
+   "overlap_mm3": 0.0,
+   "note": ""
+  },
+  {
+   "a": "key_R",
+   "b": "switches",
+   "min_clearance": 0.2,
+   "overlap_mm3": 0.0,
+   "note": ""
+  },
+  {
+   "a": "key_R",
+   "b": "battery",
+   "min_clearance": 10.1,
+   "overlap_mm3": 0.0,
+   "note": ""
+  },
+  {
+   "a": "key_R",
+   "b": "screw_heads",
+   "min_clearance": 25.02,
+   "overlap_mm3": 0.0,
+   "note": ""
+  },
+  {
+   "a": "board",
+   "b": "switches",
+   "min_clearance": 0.0,
+   "overlap_mm3": 0.0,
+   "note": "switches are soldered to the board"
+  },
+  {
+   "a": "board",
+   "b": "battery",
+   "min_clearance": 4.0,
+   "overlap_mm3": 0.0,
+   "note": ""
+  },
+  {
+   "a": "board",
+   "b": "screw_heads",
+   "min_clearance": 0.0,
+   "overlap_mm3": 0.0,
+   "note": "rear board screw heads seat on the board bottom"
+  },
+  {
+   "a": "switches",
+   "b": "battery",
+   "min_clearance": 5.6,
+   "overlap_mm3": 0.0,
+   "note": ""
+  },
+  {
+   "a": "switches",
+   "b": "screw_heads",
+   "min_clearance": 17.673,
+   "overlap_mm3": 0.0,
+   "note": ""
+  },
+  {
+   "a": "battery",
+   "b": "screw_heads",
+   "min_clearance": 2.25,
+   "overlap_mm3": 0.0,
+   "note": ""
+  }
+ ],
+ "overlaps": [],
+ "unexpected_contacts": [],
+ "battery_clearance_excl_ribs": {
+  "base (walls, clips, stops, columns)": 1.0,
+  "top": 4.814,
+  "wheel": 8.0,
+  "key_L": 10.1,
+  "key_R": 10.1,
+  "board": 4.0,
+  "switches": 5.6,
+  "screw_heads": 2.25
+ },
+ "key_centring": {
+  "SW_L1": {
+   "tongue_centre": [
+    -21.2,
+    19.5
+   ],
+   "switch_centre": [
+    -21.2,
+    19.5
+   ],
+   "offset": 0.0
+  },
+  "SW_R1": {
+   "tongue_centre": [
+    14.65,
+    21.0
+   ],
+   "switch_centre": [
+    14.65,
+    21.0
+   ],
+   "offset": 0.0
+  }
+ },
+ "height": {
+  "shell_bottom": -0.0,
+  "key_top": 34.0,
+  "wheel_top": 37.5,
+  "overall_top": 37.5,
+  "limit": 38.0
+ },
+ "usb": {
+  "j5_mouth_x": -27.505,
+  "j5_centre_y": 30.0,
+  "j5_centre_z": 16.78,
+  "opening_centre": [
+   -35.0,
+   30.0,
+   16.78
+  ],
+  "opening_wall": "left (-X)",
+  "opening_size": [
+   13.15,
+   7.3
+  ],
+  "plug_clearance": {
+   "base": 0.384,
+   "top": 0.383,
+   "wheel": 20.254,
+   "key_L": 6.663,
+   "key_R": 40.628,
+   "board": 0.5,
+   "switches": 4.029,
+   "battery": 4.03,
+   "screw_heads": 17.763
+  },
+  "recess_depth_outer_skin_to_j5": 7.495
+ },
+ "left_key_rim": {
+  "slot_outer_edge_x": -32.3,
+  "outer_side_x": -35.0,
+  "wall_outside_slot": 2.7,
+  "required": 1.5
+ },
+ "wall_thickness": {
+  "samples": 5380,
+  "samples_used": 5196,
+  "min_excluding_hinges": 1.477,
+  "at": [
+   -3.72,
+   -56.31,
+   15.45
+  ],
+  "hinge_min": 0.999,
+  "below_1p48": [
+   [
+    1.477,
+    [
+     -3.72,
+     -56.31,
+     15.45
+    ]
+   ],
+   [
+    1.477,
+    [
+     -15.57,
+     -56.38,
+     15.26
+    ]
+   ],
+   [
+    1.478,
+    [
+     2.31,
+     -56.4,
+     15.22
+    ]
+   ],
+   [
+    1.478,
+    [
+     15.62,
+     -46.75,
+     29.04
+    ]
+   ],
+   [
+    1.479,
+    [
+     24.42,
+     -46.56,
+     29.18
+    ]
+   ],
+   [
+    1.479,
+    [
+     20.24,
+     -46.58,
+     29.17
+    ]
+   ]
+  ],
+  "n_below_1p48": 6,
+  "shell_skin_exact_min": 1.5
+ },
+ "sharp_edges_left": {
+  "base": [],
+  "top": [
+   {
+    "at": [
+     -21.2,
+     9.5,
+     32.5
+    ],
+    "len": 19.66
+   },
+   {
+    "at": [
+     -32.3,
+     19.6,
+     32.26
+    ],
+    "len": 19.01
+   },
+   {
+    "at": [
+     -32.3,
+     29.35,
+     32.26
+    ],
+    "len": 0.5
+   },
+   {
+    "at": [
+     -31.32,
+     9.55,
+     32.57
+    ],
+    "len": 0.6
+   },
+   {
+    "at": [
+     -31.7,
+     10.53,
+     33.0
+    ],
+    "len": 1.38
+   },
+   {
+    "at": [
+     -31.67,
+     9.76,
+     32.76
+    ],
+    "len": 0.29
+   },
+   {
+    "at": [
+     -11.13,
+     9.54,
+     32.55
+    ],
+    "len": 0.51
+   },
+   {
+    "at": [
+     -10.8,
+     9.72,
+     32.73
+    ],
+    "len": 0.33
+   },
+   {
+    "at": [
+     -10.7,
+     10.16,
+     32.95
+    ],
+    "len": 0.69
+   },
+   {
+    "at": [
+     -10.74,
+     11.17,
+     32.81
+    ],
+    "len": 1.41
+   },
+   {
+    "at": [
+     -21.25,
+     11.5,
+     32.5
+    ],
+    "len": 20.1
+   },
+   {
+    "at": [
+     -31.34,
+     11.5,
+     32.5
+    ],
+    "len": 0.09
+   },
+   {
+    "at": [
+     -31.63,
+     11.41,
+     32.61
+    ],
+    "len": 0.61
+   },
+   {
+    "at": [
+     -32.3,
+     9.78,
+     32.37
+    ],
+    "len": 0.68
+   },
+   {
+    "at": [
+     -32.3,
+     9.65,
+     33.05
+    ],
+    "len": 0.75
+   },
+   {
+    "at": [
+     -32.3,
+     29.24,
+     32.43
+    ],
+    "len": 0.82
+   },
+   {
+    "at": [
+     -32.3,
+     9.82,
+     33.82
+    ],
+    "len": 0.88
+   },
+   {
+    "at": [
+     -32.3,
+     29.1,
+     33.14
+    ],
+    "len": 0.67
+   },
+   {
+    "at": [
+     -32.3,
+     19.66,
+     33.98
+    ],
+    "len": 18.88
+   },
+   {
+    "at": [
+     -32.3,
+     29.25,
+     33.84
+    ],
+    "len": 0.79
+   },
+   {
+    "at": [
+     -32.3,
+     29.35,
+     33.98
+    ],
+    "len": 0.5
+   }
+  ],
+  "wheel": [],
+  "key_L": [],
+  "key_R": []
+ },
+ "reduced_radius_edges": [
+  {
+   "feature": "slot",
+   "radius": 0.4,
+   "at": [
+    -10.88,
+    28.32,
+    32.62
+   ],
+   "len": 0.96
+  },
+  {
+   "feature": "slot",
+   "radius": 0.3,
+   "at": [
+    -31.52,
+    28.32,
+    33.88
+   ],
+   "len": 0.96
+  },
+  {
+   "feature": "hinge",
+   "radius": 0.4,
+   "at": [
+    4.58,
+    11.04,
+    32.55
+   ],
+   "len": 0.51
+  }
+ ],
+ "detent": {
+  "R0": 9.35,
+  "A": 0.25,
+  "d": 9.91,
+  "nub_y": 12.132,
+  "nub_z": 21.816,
+  "interference_on_peak": 0.39,
+  "phi": 0.611,
+  "valley_radius": 0.607
+ },
+ "layout": {
+  "switches": {
+   "SW_L1": [
+    -21.2,
+    19.5
+   ],
+   "SW_R1": [
+    14.65,
+    21.0
+   ]
+  },
+  "holes": {
+   "H1": [
+    -24.1,
+    47.6
+   ],
+   "H2": [
+    29.1,
+    47.6
+   ],
+   "H3": [
+    -24.1,
+    -3.6
+   ],
+   "H4": [
+    29.1,
+    -3.6
+   ]
+  },
+  "wheel_centre": [
+   -3.275,
+   20.25,
+   27.5
+  ],
+  "wheel_opening": [
+   -7.875,
+   1.325,
+   10.99,
+   29.51
+  ],
+  "battery_box": [
+   -30.0,
+   30.0,
+   -46.7,
+   43.3,
+   3.5,
+   9.5
+  ],
+  "board_z": [
+   13.5,
+   15.1
+  ],
+  "switch_top_z": 19.4,
+  "cover_screws": [
+   [
+    -24.1,
+    47.6
+   ],
+   [
+    29.1,
+    47.6
+   ],
+   [
+    -17.0,
+    -51.0
+   ],
+   [
+    17.0,
+    -51.0
+   ]
+  ]
+ },
+ "board_facts": {
+  "outline_mm": [
+   60.0,
+   58.0
+  ],
+  "SW_L1": [
+   6.3,
+   31.5
+  ],
+  "SW_R1": [
+   42.15,
+   30.0
+  ],
+  "holes": [
+   [
+    3.4,
+    3.4
+   ],
+   [
+    3.4,
+    54.6
+   ],
+   [
+    56.6,
+    3.4
+   ],
+   [
+    56.6,
+    54.6
+   ]
+  ],
+  "J5_origin": [
+   3.67,
+   21.0,
+   -90.0
+  ],
+  "J5_fab_x": [
+   -0.005,
+   7.345
+  ],
+  "J5_signal_pad_x": 7.35,
+  "J5_mouth_board_x": -0.005,
+  "J5_centre_board_y": 21.0
+ },
+ "closest_components": {
+  "top": [
+   [
+    "J_RADAR1",
+    1.35
+   ],
+   [
+    "C48",
+    1.591
+   ],
+   [
+    "J_TAMPER_LID1",
+    1.725
+   ]
+  ],
+  "base": [
+   [
+    "J6",
+    2.405
+   ],
+   [
+    "J_FAN1",
+    2.532
+   ],
+   [
+    "J_TAMPER_LID1",
+    2.532
+   ]
+  ],
+  "wheel": [
+   [
+    "U8",
+    1.883
+   ],
+   [
+    "R39",
+    2.463
+   ],
+   [
+    "R_TMR_BOT1",
+    3.214
+   ]
+  ],
+  "key_L": [
+   [
+    "J1",
+    2.401
+   ],
+   [
+    "J5",
+    4.725
+   ],
+   [
+    "R29",
+    5.816
+   ]
+  ],
+  "key_R": [
+   [
+    "U8",
+    5.361
+   ],
+   [
+    "R14",
+    6.24
+   ],
+   [
+    "R11",
+    6.615
+   ]
+  ]
+ },
+ "stl": {
+  "base": {
+   "watertight": true,
+   "bodies": 1,
+   "triangles": 338692,
+   "volume_cm3": 21.353,
+   "size_mm": [
+    70.0,
+    114.0,
+    14.0
+   ]
+  },
+  "top": {
+   "watertight": true,
+   "bodies": 1,
+   "triangles": 510378,
+   "volume_cm3": 20.205,
+   "size_mm": [
+    70.0,
+    113.26,
+    20.0
+   ]
+  },
+  "keys": {
+   "watertight": true,
+   "bodies": 2,
+   "triangles": 84160,
+   "volume_cm3": 0.312,
+   "size_mm": [
+    40.35,
+    6.0,
+    12.2
+   ]
+  },
+  "key_L": {
+   "watertight": true,
+   "bodies": 1,
+   "triangles": 42080,
+   "volume_cm3": 0.156,
+   "size_mm": [
+    4.5,
+    4.5,
+    12.2
+   ]
+  },
+  "key_R": {
+   "watertight": true,
+   "bodies": 1,
+   "triangles": 42080,
+   "volume_cm3": 0.156,
+   "size_mm": [
+    4.5,
+    4.5,
+    12.2
+   ]
+  },
+  "wheel": {
+   "watertight": true,
+   "bodies": 1,
+   "triangles": 195516,
+   "volume_cm3": 2.095,
+   "size_mm": [
+    13.0,
+    20.0,
+    19.99
+   ]
+  }
+ }
+}
