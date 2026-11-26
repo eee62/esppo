@@ -10,14 +10,14 @@
   {
    "a": "base",
    "b": "wheel",
-   "min_clearance": 14.426,
+   "min_clearance": 14.993,
    "overlap_mm3": 0.0,
    "note": ""
   },
   {
    "a": "base",
    "b": "key_L",
-   "min_clearance": 12.52,
+   "min_clearance": 12.563,
    "overlap_mm3": 0.0,
    "note": ""
   },
@@ -38,7 +38,7 @@
   {
    "a": "base",
    "b": "switches",
-   "min_clearance": 9.43,
+   "min_clearance": 9.456,
    "overlap_mm3": 0.0,
    "note": ""
   },
@@ -87,7 +87,7 @@
   {
    "a": "top",
    "b": "switches",
-   "min_clearance": 9.3,
+   "min_clearance": 8.12,
    "overlap_mm3": 0.0,
    "note": ""
   },
@@ -108,42 +108,42 @@
   {
    "a": "wheel",
    "b": "key_L",
-   "min_clearance": 9.178,
+   "min_clearance": 12.464,
    "overlap_mm3": 0.0,
    "note": ""
   },
   {
    "a": "wheel",
    "b": "key_R",
-   "min_clearance": 9.178,
+   "min_clearance": 5.904,
    "overlap_mm3": 0.0,
    "note": ""
   },
   {
    "a": "wheel",
    "b": "board",
-   "min_clearance": 1.883,
+   "min_clearance": 2.156,
    "overlap_mm3": 0.0,
    "note": ""
   },
   {
    "a": "wheel",
    "b": "switches",
-   "min_clearance": 10.925,
+   "min_clearance": 7.656,
    "overlap_mm3": 0.0,
    "note": ""
   },
   {
    "a": "wheel",
    "b": "battery",
-   "min_clearance": 8.0,
+   "min_clearance": 8.367,
    "overlap_mm3": 0.0,
    "note": ""
   },
   {
    "a": "wheel",
    "b": "screw_heads",
-   "min_clearance": 22.612,
+   "min_clearance": 25.056,
    "overlap_mm3": 0.0,
    "note": ""
   },
@@ -258,7 +258,7 @@
  "battery_clearance_excl_ribs": {
   "base (walls, clips, stops, columns)": 1.0,
   "top": 4.814,
-  "wheel": 8.0,
+  "wheel": 8.367,
   "key_L": 10.1,
   "key_R": 10.1,
   "board": 4.0,
@@ -267,7 +267,7 @@
  },
  "key_centring": {
   "SW_L1": {
-   "tongue_centre": [
+   "plunger_centre": [
     -21.2,
     19.5
    ],
@@ -275,10 +275,13 @@
     -21.2,
     19.5
    ],
-   "offset": 0.0
+   "offset": 0.0,
+   "limit": 0.5,
+   "button": "left",
+   "socket_inside_own_button": true
   },
   "SW_R1": {
-   "tongue_centre": [
+   "plunger_centre": [
     14.65,
     21.0
    ],
@@ -286,14 +289,59 @@
     14.65,
     21.0
    ],
-   "offset": 0.0
+   "offset": 0.0,
+   "limit": 0.5,
+   "button": "right",
+   "socket_inside_own_button": true
   }
+ },
+ "front_posts": {
+  "H1": {
+   "hole": [
+    -24.1,
+    47.6
+   ],
+   "button": "left",
+   "post_top_z": 27.971,
+   "vertical_gap_min": 2.0,
+   "gap_3d_min": 1.701,
+   "required_vertical": 2.0,
+   "post_free_of_button": true,
+   "post_and_rib_one_piece": true,
+   "rib_reaches_x": -34.183,
+   "pass_": true
+  },
+  "H2": {
+   "hole": [
+    29.1,
+    47.6
+   ],
+   "button": "right",
+   "post_top_z": 28.27,
+   "vertical_gap_min": 2.147,
+   "gap_3d_min": 1.701,
+   "required_vertical": 2.0,
+   "post_free_of_button": true,
+   "post_and_rib_one_piece": true,
+   "rib_reaches_x": 34.175,
+   "pass_": true
+  }
+ },
+ "buttons": {
+  "outer_edge_x": 27.0,
+  "spine_half_width": 6.5,
+  "spine_front_y": 31.26,
+  "hinge_y": 10.0,
+  "lip": 4.0,
+  "slot": 0.6,
+  "hinge_t": 1.0,
+  "symmetric_about_x0": "by construction (every slot / hinge cutter is mirrored)"
  },
  "height": {
   "shell_bottom": -0.0,
-  "key_top": 34.0,
-  "wheel_top": 37.5,
-  "overall_top": 37.5,
+  "skin_top": 34.7,
+  "wheel_top": 37.867,
+  "overall_top": 37.867,
   "limit": 38.0
  },
  "usb": {
@@ -301,7 +349,7 @@
   "j5_centre_y": 30.0,
   "j5_centre_z": 16.78,
   "opening_centre": [
-   -35.0,
+   -35.03,
    30.0,
    16.78
   ],
@@ -313,7 +361,7 @@
   "plug_clearance": {
    "base": 0.384,
    "top": 0.383,
-   "wheel": 20.254,
+   "wheel": 23.37,
    "key_L": 6.663,
    "key_R": 40.628,
    "board": 0.5,
@@ -321,75 +369,102 @@
    "battery": 4.03,
    "screw_heads": 17.763
   },
-  "recess_depth_outer_skin_to_j5": 7.495
+  "recess_depth_outer_skin_to_j5": 7.525
  },
  "left_key_rim": {
-  "slot_outer_edge_x": -32.3,
-  "outer_side_x": -35.0,
-  "wall_outside_slot": 2.7,
+  "slot_outer_edge_x": -27.6,
+  "wall_outside_slot_min": 4.0,
+  "at": [
+   -24.47,
+   59.62
+  ],
   "required": 1.5
  },
  "wall_thickness": {
-  "samples": 5380,
-  "samples_used": 5196,
-  "min_excluding_hinges": 1.477,
+  "samples": 5411,
+  "samples_used": 5261,
+  "min_excluding_hinges": 0.883,
   "at": [
-   -3.72,
-   -56.31,
-   15.45
+   28.37,
+   52.69,
+   27.14
   ],
-  "hinge_min": 0.999,
+  "hinge_min": 1.002,
   "below_1p48": [
    [
-    1.477,
+    0.883,
     [
-     -3.72,
-     -56.31,
-     15.45
+     28.37,
+     52.69,
+     27.14
     ]
    ],
    [
-    1.477,
+    0.925,
     [
-     -15.57,
-     -56.38,
-     15.26
+     -28.45,
+     26.46,
+     30.03
     ]
    ],
    [
-    1.478,
+    0.946,
     [
-     2.31,
-     -56.4,
-     15.22
+     28.48,
+     30.09,
+     30.01
     ]
    ],
    [
-    1.478,
+    0.981,
     [
-     15.62,
-     -46.75,
-     29.04
+     -28.53,
+     20.43,
+     29.98
     ]
    ],
    [
-    1.479,
+    1.016,
     [
-     24.42,
-     -46.56,
-     29.18
+     -20.69,
+     62.85,
+     24.03
     ]
    ],
    [
-    1.479,
+    1.064,
     [
-     20.24,
-     -46.58,
-     29.17
+     -24.21,
+     61.04,
+     24.03
+    ]
+   ],
+   [
+    1.116,
+    [
+     -17.87,
+     64.14,
+     23.87
+    ]
+   ],
+   [
+    1.133,
+    [
+     11.01,
+     66.06,
+     23.82
+    ]
+   ],
+   [
+    1.162,
+    [
+     26.81,
+     59.34,
+     24.0
     ]
    ]
   ],
-  "n_below_1p48": 6,
+  "n_below_1p48": 9,
   "shell_skin_exact_min": 1.5
  },
  "sharp_edges_left": {
@@ -397,215 +472,528 @@
   "top": [
    {
     "at": [
-     -21.2,
-     9.5,
-     32.5
+     30.14,
+     49.87,
+     25.4
     ],
-    "len": 19.66
+    "len": 2.43,
+    "required": false
    },
    {
     "at": [
-     -32.3,
-     19.6,
-     32.26
+     28.75,
+     49.96,
+     26.22
     ],
-    "len": 19.01
+    "len": 0.9,
+    "required": false
    },
    {
     "at": [
-     -32.3,
-     29.35,
-     32.26
+     28.6,
+     47.39,
+     27.06
     ],
-    "len": 0.5
+    "len": 4.6,
+    "required": false
    },
    {
     "at": [
-     -31.32,
-     9.55,
-     32.57
+     28.76,
+     45.12,
+     27.5
     ],
-    "len": 0.6
+    "len": 0.36,
+    "required": false
    },
    {
     "at": [
-     -31.7,
-     10.53,
-     33.0
+     30.2,
+     45.35,
+     26.48
     ],
-    "len": 1.38
+    "len": 3.23,
+    "required": false
    },
    {
     "at": [
-     -31.67,
-     9.76,
-     32.76
+     17.13,
+     9.0,
+     32.34
     ],
-    "len": 0.29
+    "len": 19.15,
+    "required": false
    },
    {
     "at": [
-     -11.13,
-     9.54,
-     32.55
+     -17.13,
+     9.0,
+     32.34
     ],
-    "len": 0.51
+    "len": 19.15,
+    "required": false
    },
    {
     "at": [
-     -10.8,
-     9.72,
-     32.73
+     31.31,
+     48.76,
+     24.4
     ],
-    "len": 0.33
+    "len": 1.5,
+    "required": false
    },
    {
     "at": [
-     -10.7,
-     10.16,
-     32.95
+     28.85,
+     50.09,
+     24.49
     ],
-    "len": 0.69
+    "len": 1.48,
+    "required": false
    },
    {
     "at": [
-     -10.74,
-     11.17,
-     32.81
+     31.39,
+     48.6,
+     20.14
     ],
-    "len": 1.41
+    "len": 7.08,
+    "required": false
    },
    {
     "at": [
-     -21.25,
-     11.5,
-     32.5
+     31.45,
+     48.45,
+     16.24
     ],
-    "len": 20.1
+    "len": 0.8,
+    "required": false
    },
    {
     "at": [
-     -31.34,
-     11.5,
-     32.5
+     28.5,
+     45.17,
+     25.35
     ],
-    "len": 0.09
+    "len": 0.9,
+    "required": false
    },
    {
     "at": [
-     -31.63,
-     11.41,
-     32.61
+     31.59,
+     47.85,
+     16.1
     ],
-    "len": 0.61
+    "len": 0.5,
+    "required": false
    },
    {
     "at": [
-     -32.3,
-     9.78,
-     32.37
+     28.6,
+     45.15,
+     26.66
     ],
-    "len": 0.68
+    "len": 1.75,
+    "required": false
    },
    {
     "at": [
-     -32.3,
-     9.65,
-     33.05
+     31.34,
+     46.48,
+     24.85
     ],
-    "len": 0.75
+    "len": 1.43,
+    "required": false
    },
    {
     "at": [
-     -32.3,
-     29.24,
-     32.43
+     31.59,
+     47.35,
+     16.1
     ],
-    "len": 0.82
+    "len": 0.5,
+    "required": false
    },
    {
     "at": [
-     -32.3,
-     9.82,
-     33.82
+     31.39,
+     46.6,
+     20.37
     ],
-    "len": 0.88
+    "len": 7.55,
+    "required": false
    },
    {
     "at": [
-     -32.3,
-     29.1,
-     33.14
+     31.45,
+     46.75,
+     16.24
     ],
-    "len": 0.67
+    "len": 0.8,
+    "required": false
    },
    {
     "at": [
-     -32.3,
-     19.66,
-     33.98
+     28.6,
+     45.15,
+     27.56
     ],
-    "len": 18.88
+    "len": 0.03,
+    "required": false
    },
    {
     "at": [
-     -32.3,
-     29.25,
-     33.84
+     -28.51,
+     48.97,
+     26.58
     ],
-    "len": 0.79
+    "len": 0.71,
+    "required": false
    },
    {
     "at": [
-     -32.3,
-     29.35,
-     33.98
+     -28.6,
+     48.63,
+     26.18
     ],
-    "len": 0.5
+    "len": 0.39,
+    "required": false
+   },
+   {
+    "at": [
+     6.35,
+     7.65,
+     33.27
+    ],
+    "len": 2.2,
+    "required": false
+   },
+   {
+    "at": [
+     6.22,
+     6.9,
+     33.28
+    ],
+    "len": 0.79,
+    "required": false
+   },
+   {
+    "at": [
+     7.15,
+     9.29,
+     33.36
+    ],
+    "len": 1.27,
+    "required": false
+   },
+   {
+    "at": [
+     26.82,
+     9.35,
+     29.69
+    ],
+    "len": 1.38,
+    "required": false
+   },
+   {
+    "at": [
+     7.1,
+     9.94,
+     33.58
+    ],
+    "len": 0.12,
+    "required": false
+   },
+   {
+    "at": [
+     26.83,
+     10.67,
+     29.67
+    ],
+    "len": 1.43,
+    "required": false
+   },
+   {
+    "at": [
+     -7.15,
+     9.29,
+     33.36
+    ],
+    "len": 1.27,
+    "required": false
+   },
+   {
+    "at": [
+     -7.1,
+     10.02,
+     33.58
+    ],
+    "len": 0.28,
+    "required": false
+   },
+   {
+    "at": [
+     -26.95,
+     10.02,
+     29.84
+    ],
+    "len": 2.81,
+    "required": false
+   },
+   {
+    "at": [
+     -17.14,
+     11.0,
+     32.34
+    ],
+    "len": 19.16,
+    "required": false
+   },
+   {
+    "at": [
+     -7.15,
+     10.74,
+     33.34
+    ],
+    "len": 1.27,
+    "required": false
+   },
+   {
+    "at": [
+     -28.6,
+     48.6,
+     25.76
+    ],
+    "len": 0.47,
+    "required": false
+   },
+   {
+    "at": [
+     -28.38,
+     48.6,
+     25.09
+    ],
+    "len": 0.99,
+    "required": false
+   },
+   {
+    "at": [
+     -27.16,
+     48.6,
+     25.33
+    ],
+    "len": 1.62,
+    "required": false
+   },
+   {
+    "at": [
+     -26.39,
+     48.6,
+     20.93
+    ],
+    "len": 8.66,
+    "required": false
+   },
+   {
+    "at": [
+     -26.22,
+     48.6,
+     25.66
+    ],
+    "len": 0.37,
+    "required": false
+   },
+   {
+    "at": [
+     -26.29,
+     48.6,
+     25.54
+    ],
+    "len": 0.61,
+    "required": false
+   },
+   {
+    "at": [
+     -26.45,
+     48.45,
+     16.24
+    ],
+    "len": 0.8,
+    "required": false
+   },
+   {
+    "at": [
+     -26.39,
+     46.6,
+     21.13
+    ],
+    "len": 9.07,
+    "required": false
+   },
+   {
+    "at": [
+     -26.24,
+     46.6,
+     26.04
+    ],
+    "len": 0.82,
+    "required": false
+   },
+   {
+    "at": [
+     -26.15,
+     46.6,
+     26.19
+    ],
+    "len": 0.51,
+    "required": false
+   },
+   {
+    "at": [
+     -27.16,
+     46.6,
+     25.86
+    ],
+    "len": 1.62,
+    "required": false
+   },
+   {
+    "at": [
+     -26.6,
+     47.6,
+     16.1
+    ],
+    "len": 1.01,
+    "required": false
+   },
+   {
+    "at": [
+     -26.45,
+     46.75,
+     16.24
+    ],
+    "len": 0.8,
+    "required": false
+   },
+   {
+    "at": [
+     6.45,
+     8.46,
+     33.61
+    ],
+    "len": 0.45,
+    "required": false
+   },
+   {
+    "at": [
+     7.1,
+     10.08,
+     33.58
+    ],
+    "len": 0.16,
+    "required": false
+   },
+   {
+    "at": [
+     7.15,
+     10.74,
+     33.34
+    ],
+    "len": 1.27,
+    "required": false
+   },
+   {
+    "at": [
+     17.14,
+     11.0,
+     32.34
+    ],
+    "len": 19.16,
+    "required": false
+   },
+   {
+    "at": [
+     -28.38,
+     46.81,
+     25.57
+    ],
+    "len": 1.06,
+    "required": false
+   },
+   {
+    "at": [
+     6.35,
+     7.65,
+     34.48
+    ],
+    "len": 2.19,
+    "required": false
+   },
+   {
+    "at": [
+     6.45,
+     8.46,
+     34.11
+    ],
+    "len": 0.45,
+    "required": false
+   },
+   {
+    "at": [
+     6.22,
+     6.91,
+     34.49
+    ],
+    "len": 0.78,
+    "required": false
+   },
+   {
+    "at": [
+     -7.39,
+     6.91,
+     34.47
+    ],
+    "len": 0.79,
+    "required": false
+   },
+   {
+    "at": [
+     -7.25,
+     7.65,
+     34.46
+    ],
+    "len": 2.2,
+    "required": false
+   },
+   {
+    "at": [
+     -7.15,
+     8.46,
+     34.1
+    ],
+    "len": 0.45,
+    "required": false
    }
   ],
   "wheel": [],
   "key_L": [],
   "key_R": []
  },
- "reduced_radius_edges": [
-  {
-   "feature": "slot",
-   "radius": 0.4,
-   "at": [
-    -10.88,
-    28.32,
-    32.62
-   ],
-   "len": 0.96
-  },
-  {
-   "feature": "slot",
-   "radius": 0.3,
-   "at": [
-    -31.52,
-    28.32,
-    33.88
-   ],
-   "len": 0.96
-  },
-  {
-   "feature": "hinge",
-   "radius": 0.4,
-   "at": [
-    4.58,
-    11.04,
-    32.55
-   ],
-   "len": 0.51
-  }
- ],
+ "reduced_radius_edges": [],
+ "edge_rule": {
+  "rule": "outer skin and USB-C opening edges >= R_MIN; edges inside the shell accepted",
+  "r_min": 0.5,
+  "required_sharp": 0,
+  "required_reduced": 0,
+  "accepted_internal_sharp": 56,
+  "accepted_internal_reduced": 0
+ },
  "detent": {
   "R0": 9.35,
   "A": 0.25,
   "d": 9.91,
   "nub_y": 12.132,
-  "nub_z": 21.816,
+  "nub_z": 22.183,
   "interference_on_peak": 0.39,
   "phi": 0.611,
   "valley_radius": 0.607
@@ -640,15 +1028,15 @@
    ]
   },
   "wheel_centre": [
-   -3.275,
+   0.0,
    20.25,
-   27.5
+   27.867
   ],
   "wheel_opening": [
-   -7.875,
-   1.325,
-   10.99,
-   29.51
+   -4.6,
+   4.6,
+   11.12,
+   29.76
   ],
   "battery_box": [
    -30.0,
@@ -744,29 +1132,29 @@
   "base": [
    [
     "J6",
-    2.405
+    2.428
    ],
    [
     "J_FAN1",
-    2.532
+    2.714
    ],
    [
-    "J_TAMPER_LID1",
-    2.532
+    "U8",
+    3.1
    ]
   ],
   "wheel": [
    [
     "U8",
-    1.883
+    2.156
+   ],
+   [
+    "C10",
+    3.256
    ],
    [
     "R39",
-    2.463
-   ],
-   [
-    "R_TMR_BOT1",
-    3.214
+    3.269
    ]
   ],
   "key_L": [
@@ -802,62 +1190,62 @@
   "base": {
    "watertight": true,
    "bodies": 1,
-   "triangles": 338692,
-   "volume_cm3": 21.353,
+   "triangles": 675408,
+   "volume_cm3": 23.196,
    "size_mm": [
-    70.0,
-    114.0,
+    76.01,
+    130.0,
     14.0
    ]
   },
   "top": {
    "watertight": true,
    "bodies": 1,
-   "triangles": 510378,
-   "volume_cm3": 20.205,
+   "triangles": 958778,
+   "volume_cm3": 19.836,
    "size_mm": [
-    70.0,
-    113.26,
-    20.0
+    76.01,
+    130.0,
+    20.7
    ]
   },
   "keys": {
    "watertight": true,
    "bodies": 2,
    "triangles": 84160,
-   "volume_cm3": 0.312,
+   "volume_cm3": 0.277,
    "size_mm": [
     40.35,
     6.0,
-    12.2
+    11.96
    ]
   },
   "key_L": {
    "watertight": true,
    "bodies": 1,
    "triangles": 42080,
-   "volume_cm3": 0.156,
+   "volume_cm3": 0.125,
    "size_mm": [
     4.5,
     4.5,
-    12.2
+    10.22
    ]
   },
   "key_R": {
    "watertight": true,
    "bodies": 1,
    "triangles": 42080,
-   "volume_cm3": 0.156,
+   "volume_cm3": 0.152,
    "size_mm": [
     4.5,
     4.5,
-    12.2
+    11.96
    ]
   },
   "wheel": {
    "watertight": true,
    "bodies": 1,
-   "triangles": 195516,
+   "triangles": 171544,
    "volume_cm3": 2.095,
    "size_mm": [
     13.0,

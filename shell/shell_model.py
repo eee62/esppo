@@ -14,7 +14,7 @@ Board placement (fixed by the brief): rotation 0, board shifted +2.5 mm in X.
   shell_x = (board_x - 30) + BOARD_SHIFT_X          board_x/board_y: origin board top-left, Y down
   shell_y = BOARD_FRONT_Y - board_y                 (board top edge, board_y = 0, faces the shell front)
 
-The board geometry is read from the KiCad PCB inside ../mouse-revc-src.zip (read only, never written).
+The board geometry is read from ../ESP32-S31-Vision-Pro-RevC.kicad_pcb (read only, never written).
 """
 from __future__ import annotations
 
@@ -24,7 +24,6 @@ import math
 import os
 import re
 import sys
-import zipfile
 from dataclasses import dataclass, field, asdict
 
 import cadquery as cq
@@ -35,8 +34,7 @@ from OCP.TopTools import TopTools_IndexedDataMapOfShapeListOfShape
 from OCP.TopAbs import TopAbs_EDGE, TopAbs_FACE
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ZIP_PATH = os.path.join(HERE, "..", "mouse-revc-src.zip")
-PCB_IN_ZIP = "mouse-revc-src/ESP32-S31-Vision-Pro-RevC.kicad_pcb"
+PCB_PATH = os.path.join(HERE, "..", "ESP32-S31-Vision-Pro-RevC.kicad_pcb")
 
 
 # ----------------------------------------------------------------------------------------------
@@ -171,7 +169,7 @@ p = P()
 
 
 # ----------------------------------------------------------------------------------------------
-# KiCad board data (read from the zip, never written)
+# KiCad board data (read from the PCB file, never written)
 # ----------------------------------------------------------------------------------------------
 def _tokenize(s):
     i, n = 0, len(s)
@@ -213,8 +211,26 @@ def _find(node, key):
 
 
 def read_board():
-    with zipfile.ZipFile(ZIP_PATH) as z:
-        txt = z.read(PCB_IN_ZIP).decode()
+    """Parsed board (outline, footprints). The parse takes ~2 s, so it is cached on disk, keyed on the PCB file's
+    bytes and on the parser source (any edit to either re-parses)."""
+    import hashlib, inspect, pickle
+    with open(PCB_PATH, "rb") as f:
+        raw = f.read()
+    src = "".join(inspect.getsource(fn) for fn in (_tokenize, _parse, _find, _read_board))
+    key = hashlib.sha1(raw + src.encode()).hexdigest()[:16]
+    path = os.path.join(HERE, ".cache", f"read_board-{key}.pkl")
+    if not os.environ.get("SHELL_NO_CACHE") and os.path.exists(path):
+        with open(path, "rb") as f:
+            return pickle.load(f)
+    out = _read_board(raw.decode("utf-8"))
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path + ".tmp", "wb") as f:
+        pickle.dump(out, f)
+    os.replace(path + ".tmp", path)
+    return out
+
+
+def _read_board(txt):
     tree = _parse(_tokenize(txt))
     # outline
     xs, ys = [], []
@@ -524,7 +540,10 @@ def min_dist(a, b):
     because the solid-inside test in BRepExtrema can misclassify points near spline faces."""
     fa = cq.Compound.makeCompound(a.Faces())
     fb = cq.Compound.makeCompound(b.Faces())
-    d = BRepExtrema_DistShapeShape(fa.wrapped, fb.wrapped)
+    d = BRepExtrema_DistShapeShape()
+    d.SetMultiThread(True)            # the top / board query alone otherwise runs for 40+ min on one core
+    d.LoadS1(fa.wrapped)
+    d.LoadS2(fb.wrapped)
     d.Perform()
     return d.Value()
 
@@ -1174,37 +1193,59 @@ def top_shell():
     return t
 
 
-@disk_cache(*TOP_SHELL_DEPS, "top_shell", "tongue_keepout", "detent_geometry", "ring_x", "_socket_z0")
-def top_part():
-    """Stage 2 of the top: features hanging from the skin (sockets, bosses, brackets, detent) and holes."""
+def front_post(h):
+    """Screw post at a front hole (H1 / H2), which sits under a button: boss + rib to the fixed side wall, both cut
+    TONGUE_CLR (vertical) below the button skin's underside, so the button can travel. Boss foot and rib edges are
+    rounded on the plain blanks, before the skin trim."""
+    hx, hy = HOLES[h]
+    emb = skin_body(p.WALL - EMBED, p.FLOOR)
+    sg = 1 if hx > 0 else -1
+    xa, xb = sorted((hx, sg * (p.SIDE + 1)))
+    cyl = cyl_z(hx, hy, p.board_z_top, Z_HI, p.BOSS_D)
+    boss = solid(cyl.faces("<Z").edges().fillet(p.R_MIN).val().intersect(emb))
+    rib = solid(box(xa, xb, hy - 1.0, hy + 1.0, p.board_z_top + 1.0, Z_HI).edges("|X").fillet(p.R_MIN)
+                .val().intersect(emb))
+    return solid(boss.fuse(rib).cut(tongue_keepout()))
+
+
+# The top is built in cached stages (each stage's cache key holds its own source and that of every stage before
+# it, so a fix to one stage reruns only that stage and the ones after it):
+#   top_shell -> top_posts -> top_wheel_mounts -> top_holes -> top_part (outer-edge rounding)
+_top_posts_deps = (*TOP_SHELL_DEPS, "top_shell", "tongue_keepout", "_socket_z0", "front_post")
+
+
+@disk_cache(*_top_posts_deps)
+def top_posts():
+    """Stage 2: key sockets under the buttons, board bosses (front ones shortened, with a rib), cover-screw bosses.
+    Blanks run up to Z_HI and are cut back to EMBED into the skin (never to the outer surface, which would rebuild
+    the rounded slot / opening rims)."""
     t = top_shell()
-    ox0, ox1, oy0, oy1 = WOPEN
-    # ---- features hanging from the skin: blanks run up to Z_HI and are cut back to EMBED into the skin
-    #      (never to the outer surface, which would rebuild the rounded slot / opening rims)
     emb = skin_body(p.WALL - EMBED, p.FLOOR)
     for k in SW:
         sx, sy = SW[k]
         sock = pre_round(cyl_z(sx, sy, SOCKET_Z0[k], Z_HI, p.KEY_SOCKET_D), p.R_MIN)
         t = add(t, solid(sock.intersect(emb)), "socket", pre=False)
-    keep = tongue_keepout()
     for h, (hx, hy) in HOLES.items():
-        cyl = cyl_z(hx, hy, p.board_z_top, Z_HI, p.BOSS_D)
         if h in FRONT_HOLES:
-            # under a button: trimmed TONGUE_CLR below its skin, held by a rib from the fixed side wall; boss foot
-            # and rib edges are rounded on the plain blanks, before the skin trim (19 -> 4 unrounded edges)
-            sg = 1 if hx > 0 else -1
-            xa, xb = sorted((hx, sg * (p.SIDE + 1)))
-            boss = solid(cyl.faces("<Z").edges().fillet(p.R_MIN).val().intersect(emb))
-            rib = solid(box(xa, xb, hy - 1.0, hy + 1.0, p.board_z_top + 1.0, Z_HI).edges("|X").fillet(p.R_MIN)
-                        .val().intersect(emb))
-            boss = solid(boss.fuse(rib).cut(keep))
+            # front: round the rib / keep-out cut edges on the loose feature, where OCC can (pre_round)
+            t = add(t, front_post(h), "boss", pre=True)
         else:
-            boss = solid(cyl.val().intersect(emb))
-        # front: round the rib / keep-out cut edges on the loose feature, where OCC can (pre_round)
-        t = add(t, boss, "boss", pre=h in FRONT_HOLES)
+            t = add(t, solid(cyl_z(hx, hy, p.board_z_top, Z_HI, p.BOSS_D).val().intersect(emb)), "boss", pre=False)
     for sx in (-p.REAR_SCREW_X, p.REAR_SCREW_X):
         boss = pre_round(cyl_z(sx, p.REAR_SCREW_Y, p.H_BASE, Z_HI, p.BOSS_D_REAR), p.R_MIN)
         t = add(t, solid(boss.intersect(emb)), "boss", pre=False)
+    return t
+
+
+_top_mount_deps = (*_top_posts_deps, "top_posts", "detent_geometry", "ring_x")
+
+
+@disk_cache(*_top_mount_deps)
+def top_wheel_mounts():
+    """Stage 3: wheel brackets and the detent arm."""
+    t = top_posts()
+    emb = skin_body(p.WALL - EMBED, p.FLOOR)
+    ox0, ox1, oy0, oy1 = WOPEN
     bz0 = WHEEL_Z - 2.5
     for xa, xb in ((ox0 - p.BRACKET_T, ox0), (ox1, ox1 + p.BRACKET_T)):
         br = pre_round(box(xa, xb, WHEEL_Y - p.BRACKET_LEN / 2, WHEEL_Y + p.BRACKET_LEN / 2, bz0, Z_HI), 0.5)
@@ -1224,7 +1265,18 @@ def top_part():
            .extrude(ax1 - ax0))
     arm = pre_round(arm, p.R_MIN, skip=lambda e: e.BoundingBox().zmin > zin - 0.3)
     t = add(t, solid(arm.intersect(emb)), "detent", pre=False)
-    # ---- holes
+    return t
+
+
+_top_holes_deps = (*_top_mount_deps, "top_wheel_mounts")
+
+
+@disk_cache(*_top_holes_deps)
+def top_holes():
+    """Stage 4: axle seats, plunger socket holes, screw pilots."""
+    t = top_wheel_mounts()
+    ox0, ox1, oy0, oy1 = WOPEN
+    bz0 = WHEEL_Z - 2.5
     for xa, xb in ((ox0 - p.BRACKET_T - 1, ox0 + 0.01), (ox1 - 0.01, ox1 + p.BRACKET_T + 1)):
         seat = cyl_x(xa, xb, WHEEL_Y, WHEEL_Z, p.AXLE_SEAT_D).union(
             box(xa, xb, WHEEL_Y - p.AXLE_THROAT / 2, WHEEL_Y + p.AXLE_THROAT / 2, bz0 - 1, WHEEL_Z))
@@ -1237,6 +1289,12 @@ def top_part():
     for sx in (-p.REAR_SCREW_X, p.REAR_SCREW_X):
         t = sub(t, cyl_z(sx, p.REAR_SCREW_Y, p.H_BASE - 1, p.H_BASE + p.PILOT_DEPTH_REAR, p.SCREW_PILOT_D), "pilot")
     return solid(t)
+
+
+@disk_cache(*_top_holes_deps, "top_holes", "round_all", "required_edge", "_skin_faces")
+def top_part():
+    """Stage 5 (last): round the outer-skin and USB-C edges still sharp (edge rule); returns (top, sharp edges left)."""
+    return round_all(top_holes(), p.R_MIN, rounds=1, name="top", keep=required_edge)
 
 
 # ----------------------------------------------------------------------------------------------
@@ -1385,7 +1443,7 @@ def build(round_edges=True):
     ob, hol = hollow()
     parts = {
         "base": base_part(),
-        "top": top_part(),
+        "top": top_holes(),
         "wheel": wheel_part(),
         "key_L": plunger("SW_L1"),
         "key_R": plunger("SW_R1"),
@@ -1393,7 +1451,11 @@ def build(round_edges=True):
     sharp = {}
     if round_edges:
         for k in list(parts):
-            parts[k], left = round_all(parts[k], p.R_MIN, rounds=1, name=k, keep=required_edge)
+            if k == "top":
+                parts[k], left = top_part()          # cached last stage
+                left = [cq.Shape.cast(e.wrapped) for e in left]   # unpickled edges come back untyped
+            else:
+                parts[k], left = round_all(parts[k], p.R_MIN, rounds=1, name=k, keep=required_edge)
             sharp[k] = left
     refs = {
         "board": board_model(),
@@ -1425,12 +1487,30 @@ def wall_thickness(part, outer, n=6000, seed=1):
     from OCP.BRepMesh import BRepMesh_IncrementalMesh
     from OCP.BRepTools import BRepTools
     def mesh(s):
-        # absolute deflection and a fine angle: cadquery's tessellate() is relative to face size, and 0.2 rad on
-        # the R~70 dome sags ~0.35 mm (R * (1 - cos 0.1)); both read as thin wall
+        # absolute linear deflection 0.01 mm bounds the chord sag on every face (cadquery's tessellate() is relative
+        # to face size: 0.2 rad on the R~70 dome sags ~0.35 mm, which reads as thin wall). The triangles are read
+        # straight from this mesh: calling tessellate() afterwards re-meshed the whole part with its relative
+        # deflection and a 0.05 rad angle (5.9 M triangles, 13 GB in the ray cast, killed for lack of memory).
+        # The angular limit is 0.5 rad: the 0.01 mm linear limit already sets the accuracy.
+        from OCP.BRep import BRep_Tool
+        from OCP.TopLoc import TopLoc_Location
+        from OCP.TopAbs import TopAbs_REVERSED
         BRepTools.Clean_s(s.wrapped)
-        BRepMesh_IncrementalMesh(s.wrapped, 0.01, False, 0.05, True)
-        vs, fs = s.tessellate(0.01, 0.05)
-        return trimesh.Trimesh([(v.x, v.y, v.z) for v in vs], fs, process=True)
+        BRepMesh_IncrementalMesh(s.wrapped, 0.01, False, 0.5, True)
+        V, F, off = [], [], 0
+        for f in s.Faces():
+            loc = TopLoc_Location()
+            tri = BRep_Tool.Triangulation_s(f.wrapped, loc)
+            if tri is None:
+                continue
+            tr = loc.Transformation()
+            V += [tri.Node(i).Transformed(tr).Coord() for i in range(1, tri.NbNodes() + 1)]
+            rev = f.wrapped.Orientation() == TopAbs_REVERSED
+            for i in range(1, tri.NbTriangles() + 1):
+                a, b, c = tri.Triangle(i).Get()
+                F.append((off + a - 1, off + c - 1, off + b - 1) if rev else (off + a - 1, off + b - 1, off + c - 1))
+            off += tri.NbNodes()
+        return trimesh.Trimesh(np.array(V), np.array(F), process=True)
     mp, mo = mesh(part), mesh(outer)
     pts, fi = trimesh.sample.sample_surface_even(mp, n, seed=seed)
     # keep samples that lie on the outer envelope
@@ -1560,19 +1640,73 @@ def _pool_job(job):
     return min_dist(_SH[a], _SH[b])
 
 
-def run_parallel(shapes, jobs, n=8):
+def _pool_job_keyed(job):
+    return job, _pool_job(job)
+
+
+def shape_hash(s):
+    """Hash of a shape's exact B-rep (meshes dropped first, so a tessellated copy hashes the same)."""
+    import hashlib, io
+    from OCP.BRepTools import BRepTools
+    if isinstance(s, dict):
+        return hashlib.sha1("".join(shape_hash(v) for _, v in sorted(s.items())).encode()).hexdigest()
+    BRepTools.Clean_s(s.wrapped)
+    buf = io.BytesIO()
+    s.exportBin(buf)
+    return hashlib.sha1(buf.getvalue()).hexdigest()
+
+
+_check_src = {"d": ("min_dist",), "v": ("common_volume",),
+              "w": ("wall_report", "wall_thickness", "_exact_wall", "in_hinge", "_near_slot", "near_cut_edge")}
+
+
+def run_parallel(shapes, jobs, n=None):
     """Run check jobs (("d", a, b) distance, ("v", a, b) overlap volume, ("w", "", "") wall report) on n
-    processes; each worker loads the shapes once. The exact queries on the lofted skin are slow (seconds each)."""
-    import multiprocessing as mp, pickle, tempfile
-    with tempfile.NamedTemporaryFile(suffix=".pkl", delete=False) as f:
-        pickle.dump(shapes, f)
-        path = f.name
-    try:
-        with mp.get_context("spawn").Pool(n, initializer=_pool_init, initargs=(path,)) as pool:
-            out = pool.map(_pool_job, jobs, chunksize=1)
-    finally:
-        os.remove(path)
-    return dict(zip(jobs, out))
+    processes; each worker loads the shapes once. The exact queries on the lofted skin are slow (seconds to many
+    minutes each), so every result is cached on disk, keyed on the exact B-rep of the shapes it reads, the source
+    of that kind of check and the parameters: a rebuild that changes one part re-measures only the jobs that involve it."""
+    import hashlib, inspect, multiprocessing as mp, pickle, tempfile
+    n = n or os.cpu_count() or 4
+    h = {k: shape_hash(v) for k, v in shapes.items()}
+    salt = {k: repr((asdict(p), "".join(inspect.getsource(globals()[f]) for f in fs))) for k, fs in _check_src.items()}
+    def key(job):
+        # each job kind is keyed on its own code only: a change to the wall check does not re-run the distances
+        kind, a, b = job
+        deps = (h["__parts"], h["ob"]) if kind == "w" else (h[a], h[b])
+        return hashlib.sha1(repr((salt[kind], kind, deps)).encode()).hexdigest()[:20]
+    cdir = os.path.join(CACHE_DIR, "checks")
+    os.makedirs(cdir, exist_ok=True)
+    out, todo = {}, []
+    for j in jobs:
+        f = os.path.join(cdir, key(j) + ".pkl")
+        if os.path.exists(f) and not os.environ.get("SHELL_NO_CACHE"):
+            with open(f, "rb") as fh:
+                out[j] = pickle.load(fh)
+        else:
+            todo.append(j)
+    print(f"checks: {len(jobs) - len(todo)} cached, {len(todo)} to run", flush=True)
+    if todo:
+        # slow jobs first (anything on the lofted top / base skin), so the pool does not end on one long query
+        heavy = ("w", "top", "base", "ob", "cav", "ribs_removed")
+        todo.sort(key=lambda j: -sum(x in heavy for x in j))
+        with tempfile.NamedTemporaryFile(suffix=".pkl", delete=False) as f:
+            pickle.dump(shapes, f)
+            path = f.name
+        try:
+            # ProcessPoolExecutor raises BrokenProcessPool if a worker dies (crash, out of memory); a
+            # multiprocessing.Pool silently replaces the worker and waits for the lost job forever
+            from concurrent.futures import ProcessPoolExecutor, as_completed
+            with ProcessPoolExecutor(n, mp_context=mp.get_context("spawn"), initializer=_pool_init,
+                                     initargs=(path,)) as pool:
+                for fut in as_completed([pool.submit(_pool_job_keyed, j) for j in todo]):
+                    j, r = fut.result()
+                    out[j] = r
+                    with open(os.path.join(cdir, key(j) + ".pkl.tmp"), "wb") as fh:
+                        pickle.dump(r, fh)
+                    os.replace(os.path.join(cdir, key(j) + ".pkl.tmp"), os.path.join(cdir, key(j) + ".pkl"))
+        finally:
+            os.remove(path)
+    return out
 
 
 def run_checks(ob, parts, refs, sharp):
@@ -1622,6 +1756,7 @@ def run_checks(ob, parts, refs, sharp):
                                     offset=round(math.hypot(cx - sx, cy - sy), 3), limit=0.5,
                                     button="left" if side < 0 else "right",
                                     socket_inside_own_button=all(in_button(x, y, side) for x, y in rim))
+    R["front_posts"] = front_post_report(parts["top"])
     R["buttons"] = dict(outer_edge_x=p.BTN_X, spine_half_width=p.SPINE_HW, spine_front_y=round(SPINE_FRONT_Y, 3),
                         hinge_y=p.HINGE_Y, lip=p.LIP, slot=p.SLOT, hinge_t=p.HINGE_T,
                         symmetric_about_x0="by construction (every slot / hinge cutter is mirrored)")
@@ -1674,6 +1809,82 @@ def run_checks(ob, parts, refs, sharp):
 
 
 CLOSEST_PARTS = ("top", "base", "wheel", "key_L", "key_R")
+
+
+def button_body(top, side):
+    """The moving button on side -1 / +1: the top part inside the button outline, in front of the hinge line.
+    The slots separate it from everything fixed, so it is one solid unless something fixed is joined to it."""
+    pr = cq.Solid.extrudeLinear(cq.Face.makeFromWires(TONGUE_W), cq.Vector(0, 0, Z_HI - p.FLOOR)) \
+        .translate(cq.Vector(0, 0, p.FLOOR - SLOT_Z0))
+    if side < 0:
+        pr = pr.mirror("YZ")
+    pr = pr.intersect(box(-60, 60, p.HINGE_Y, 80, p.FLOOR, Z_HI).val())
+    return top.intersect(pr).Solids()
+
+
+def _line_hits(shape, x, y):
+    """Exact z of every crossing of the vertical line through (x, y) with the shape's faces."""
+    from OCP.BRepIntCurveSurface import BRepIntCurveSurface_Inter
+    from OCP.gp import gp_Lin, gp_Pnt, gp_Dir
+    it = BRepIntCurveSurface_Inter()
+    it.Init(shape.wrapped, gp_Lin(gp_Pnt(float(x), float(y), 0.0), gp_Dir(0, 0, 1)), 1e-7)
+    out = []
+    while it.More():
+        out.append(it.Pnt().Z())
+        it.Next()
+    return out
+
+
+def _mesh(s, tol=0.02):
+    import trimesh
+    vs, fs = s.tessellate(tol, 0.1)
+    return trimesh.Trimesh([(v.x, v.y, v.z) for v in vs], fs, process=True)
+
+
+def front_post_report(top):
+    """Each front screw post vs the button above it: the post must not touch the button, and must stay TONGUE_CLR
+    (vertical) below it. Vertical gap from rays on a 0.2 mm grid over the post, the closest ones re-measured on
+    the exact B-rep (the button tip swings about the hinge, so its travel there is near vertical); 3D gap = exact
+    B-rep distance."""
+    out = {}
+    for h in FRONT_HOLES:
+        hx, hy = HOLES[h]
+        side = 1 if hx > 0 else -1
+        sol = button_body(top, side)
+        btn = max(sol, key=lambda s: s.Volume())
+        post = front_post(h)
+        mb, mp_ = _mesh(btn), _mesh(post)
+        bb = post.BoundingBox()
+        gx, gy = np.meshgrid(np.arange(bb.xmin, bb.xmax, 0.2), np.arange(bb.ymin, bb.ymax, 0.2))
+        org = np.column_stack([gx.ravel(), gy.ravel(), np.zeros(gx.size)])
+        up = np.tile([0.0, 0.0, 1.0], (len(org), 1))
+        lp, ip, _ = mp_.ray.intersects_location(org, up, multiple_hits=True)
+        lb, ib, _ = mb.ray.intersects_location(org, up, multiple_hits=True)
+        ptop = {}
+        for l, i in zip(lp, ip):
+            ptop[i] = max(ptop.get(i, -1e9), l[2])
+        mgap = {}
+        for l, i in zip(lb, ib):
+            if i in ptop and l[2] > ptop[i] - 1e-6:
+                mgap[i] = min(mgap.get(i, 1e9), l[2] - ptop[i])
+        # the mesh only finds the candidates (its chords sag on the big skin faces); every ray whose mesh gap is
+        # within 0.3 mm of the smallest is re-measured on the exact B-rep
+        g0 = min(mgap.values()) if mgap else None
+        gap = []
+        for i, g in mgap.items():
+            if g <= g0 + 0.3:
+                zp = _line_hits(post, org[i][0], org[i][1])
+                zb = [z for z in _line_hits(btn, org[i][0], org[i][1]) if zp and z > max(zp) - 1e-6]
+                if zp and zb:
+                    gap.append(min(zb) - max(zp))
+        d3 = min_dist(btn, post)
+        out[h] = dict(hole=(round(hx, 3), round(hy, 3)), button="left" if side < 0 else "right",
+                      post_top_z=round(bb.zmax, 3), vertical_gap_min=round(float(min(gap)), 3) if gap else None,
+                      gap_3d_min=round(d3, 3), required_vertical=p.TONGUE_CLR,
+                      post_free_of_button=d3 > 1e-3, post_and_rib_one_piece=len(post.Solids()) == 1,
+                      rib_reaches_x=round(post.BoundingBox().xmin if side < 0 else post.BoundingBox().xmax, 3),
+                      pass_=bool(gap) and min(gap) >= p.TONGUE_CLR - 0.02 and d3 > 1e-3)
+    return out
 
 
 def component_boxes():

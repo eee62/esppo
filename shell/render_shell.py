@@ -11,8 +11,11 @@ Views
   top.png               top view (front = up)
   side_left.png         left side (USB-C opening side)
   side_right.png        right side
+  section_keys.png      cross-section through both keys: vertical plane through the SW_L1 and SW_R1 centres,
+                        rear half kept, with the board, switches, battery and plungers in place
 Colours: grey top over a black base and wheel, white background.
 """
+import math
 import os
 import sys
 
@@ -102,6 +105,26 @@ def main():
     render(shell_actors, "top.png", (0, 0, 1), view_up=(0, 1, 0), zoom=1.2, title="Top (front up)")
     render(shell_actors, "side_left.png", (-1, 0, 0), zoom=1.2, title="Left side (USB-C opening)")
     render(shell_actors, "side_right.png", (1, 0, 0), zoom=1.2, title="Right side")
+
+    # cross-section through the keys: vertical plane through both switch centres (SW_L1 and SW_R1 sit 1.5 mm
+    # apart in Y, so the plane is turned ~2.4 deg about Z); keep the rear half and look at the cut from the front
+    (xl, yl), (xr, yr) = m.SW["SW_L1"], m.SW["SW_R1"]
+    ang = math.degrees(math.atan2(yr - yl, xr - xl))
+    keep = (m.box(-100, 100, -100, 0, -5, 50).val()
+            .rotate(cq.Vector(0, 0, 0), cq.Vector(0, 0, 1), ang).translate(cq.Vector(xl, yl, 0)))
+    keys = cq.importers.importStep(os.path.join(HERE, "keys.step")).val()
+    sec = {
+        "top": parts["top"], "base": parts["base"], "wheel": parts["wheel"], "keys": keys,
+        "board": m.board_model(), "switches": m.switches_model(), "battery": m.battery_model(),
+    }
+    sec_actors = []
+    for k, s in sec.items():
+        c = s.intersect(keep)
+        if c.Volume() > 1e-6:
+            sec_actors.append(actor(c, COLORS[k], specular=0.1))
+    nx, ny = -math.sin(math.radians(ang)), math.cos(math.radians(ang))     # plane normal, pointing forward
+    render(sec_actors, "section_keys.png", (nx - 0.25, ny, 0.12), zoom=1.3,
+           title="Section through SW_L1 and SW_R1 (keys, plungers, switches, wheel)")
 
 if __name__ == "__main__":
     main()
