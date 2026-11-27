@@ -102,7 +102,7 @@ def main():
 
     render(shell_actors, "iso_front_left.png", (-1.0, 1.1, 0.8), zoom=1.15, title="Front-left")
     render(shell_actors, "iso_rear_right.png", (1.0, -1.1, 0.8), zoom=1.15, title="Rear-right")
-    render(shell_actors, "top.png", (0, 0, 1), view_up=(0, 1, 0), zoom=1.2, title="Top (front up)")
+    render(shell_actors, "top.png", (0, 0, 1), view_up=(0, 1, 0), zoom=0.95, title="Top (front up)")
     render(shell_actors, "side_left.png", (-1, 0, 0), zoom=1.2, title="Left side (USB-C opening)")
     render(shell_actors, "side_right.png", (1, 0, 0), zoom=1.2, title="Right side")
 

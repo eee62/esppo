@@ -382,90 +382,399 @@
  },
  "wall_thickness": {
   "samples": 5411,
-  "samples_used": 5261,
-  "min_excluding_hinges": 0.883,
+  "samples_used": 5252,
+  "min_excluding_hinges": 1.487,
   "at": [
-   28.37,
-   52.69,
-   27.14
+   28.4,
+   46.14,
+   29.13
   ],
   "hinge_min": 1.002,
-  "below_1p48": [
-   [
-    0.883,
-    [
-     28.37,
-     52.69,
-     27.14
-    ]
-   ],
-   [
-    0.925,
-    [
-     -28.45,
-     26.46,
-     30.03
-    ]
-   ],
-   [
-    0.946,
-    [
-     28.48,
-     30.09,
-     30.01
-    ]
-   ],
-   [
-    0.981,
-    [
-     -28.53,
-     20.43,
-     29.98
-    ]
-   ],
-   [
-    1.016,
-    [
-     -20.69,
-     62.85,
-     24.03
-    ]
-   ],
-   [
-    1.064,
-    [
-     -24.21,
-     61.04,
-     24.03
-    ]
-   ],
-   [
-    1.116,
-    [
-     -17.87,
-     64.14,
-     23.87
-    ]
-   ],
-   [
-    1.133,
-    [
-     11.01,
-     66.06,
-     23.82
-    ]
-   ],
-   [
-    1.162,
-    [
-     26.81,
-     59.34,
-     24.0
-    ]
+  "below_1p48": [],
+  "n_below_1p48": 0,
+  "excluded": {
+   "living_hinge": 18,
+   "near_cut_rim_or_parting_line": 132,
+   "nearest_inside_surface_is_cut_wall": {
+    "slots": 9
+   },
+   "cut_wall_readings": [
+    {
+     "reading": 0.883,
+     "at": [
+      28.37,
+      52.69,
+      27.14
+     ],
+     "cut_face_point": [
+      27.6,
+      52.53,
+      26.74
+     ],
+     "opening": "slots"
+    },
+    {
+     "reading": 0.925,
+     "at": [
+      -28.45,
+      26.46,
+      30.03
+     ],
+     "cut_face_point": [
+      -27.6,
+      26.46,
+      29.66
+     ],
+     "opening": "slots"
+    },
+    {
+     "reading": 0.946,
+     "at": [
+      28.48,
+      30.09,
+      30.01
+     ],
+     "cut_face_point": [
+      27.6,
+      30.1,
+      29.66
+     ],
+     "opening": "slots"
+    },
+    {
+     "reading": 0.981,
+     "at": [
+      -28.53,
+      20.43,
+      29.98
+     ],
+     "cut_face_point": [
+      -27.6,
+      20.43,
+      29.66
+     ],
+     "opening": "slots"
+    },
+    {
+     "reading": 1.016,
+     "at": [
+      -20.69,
+      62.85,
+      24.03
+     ],
+     "cut_face_point": [
+      -20.28,
+      61.95,
+      23.83
+     ],
+     "opening": "slots"
+    },
+    {
+     "reading": 1.064,
+     "at": [
+      -24.21,
+      61.04,
+      24.03
+     ],
+     "cut_face_point": [
+      -23.66,
+      60.15,
+      23.89
+     ],
+     "opening": "slots"
+    },
+    {
+     "reading": 1.116,
+     "at": [
+      -17.87,
+      64.14,
+      23.87
+     ],
+     "cut_face_point": [
+      -17.49,
+      63.1,
+      23.8
+     ],
+     "opening": "slots"
+    },
+    {
+     "reading": 1.133,
+     "at": [
+      11.01,
+      66.06,
+      23.82
+     ],
+     "cut_face_point": [
+      10.79,
+      64.95,
+      23.76
+     ],
+     "opening": "slots"
+    },
+    {
+     "reading": 1.162,
+     "at": [
+      26.81,
+      59.34,
+      24.0
+     ],
+     "cut_face_point": [
+      26.09,
+      58.44,
+      23.99
+     ],
+     "opening": "slots"
+    }
    ]
-  ],
-  "n_below_1p48": 9,
+  },
   "shell_skin_exact_min": 1.5
+ },
+ "webs": {
+  "min_web": {
+   "between": [
+    "slots",
+    "wheel_opening"
+   ],
+   "width": 1.5
+  },
+  "below_limit": [],
+  "passed": true,
+  "webs": [
+   {
+    "between": [
+     "slots",
+     "wheel_opening"
+    ],
+    "width": 1.5
+   },
+   {
+    "between": [
+     "screw_H2",
+     "outline at bottom (z = 0)"
+    ],
+    "width": 3.456
+   },
+   {
+    "between": [
+     "screw_rear_L",
+     "outline at bottom (z = 0)"
+    ],
+    "width": 5.238
+   },
+   {
+    "between": [
+     "screw_rear_R",
+     "outline at bottom (z = 0)"
+    ],
+    "width": 5.238
+   },
+   {
+    "between": [
+     "screw_H1",
+     "outline at bottom (z = 0)"
+    ],
+    "width": 8.455
+   },
+   {
+    "between": [
+     "slots",
+     "outline at split line (z = 14)"
+    ],
+    "width": 9.683
+   },
+   {
+    "between": [
+     "slots",
+     "usb_c"
+    ],
+    "width": 10.034
+   },
+   {
+    "between": [
+     "usb_c",
+     "outline at bottom (z = 0)"
+    ],
+    "width": 13.13
+   },
+   {
+    "between": [
+     "screw_H2",
+     "outline at split line (z = 14)"
+    ],
+    "width": 13.304
+   },
+   {
+    "between": [
+     "screw_rear_L",
+     "outline at split line (z = 14)"
+    ],
+    "width": 14.015
+   },
+   {
+    "between": [
+     "screw_rear_R",
+     "outline at split line (z = 14)"
+    ],
+    "width": 14.015
+   },
+   {
+    "between": [
+     "screw_H1",
+     "outline at split line (z = 14)"
+    ],
+    "width": 15.734
+   },
+   {
+    "between": [
+     "usb_c",
+     "screw_H1"
+    ],
+    "width": 18.843
+   },
+   {
+    "between": [
+     "slots",
+     "screw_H2"
+    ],
+    "width": 23.338
+   },
+   {
+    "between": [
+     "slots",
+     "screw_H1"
+    ],
+    "width": 23.445
+   },
+   {
+    "between": [
+     "screw_rear_L",
+     "screw_rear_R"
+    ],
+    "width": 29.0
+   },
+   {
+    "between": [
+     "wheel_opening",
+     "usb_c"
+    ],
+    "width": 30.968
+   },
+   {
+    "between": [
+     "wheel_opening",
+     "outline at split line (z = 14)"
+    ],
+    "width": 35.572
+   },
+   {
+    "between": [
+     "wheel_opening",
+     "screw_H1"
+    ],
+    "width": 40.01
+   },
+   {
+    "between": [
+     "wheel_opening",
+     "screw_H2"
+    ],
+    "width": 42.575
+   },
+   {
+    "between": [
+     "screw_H1",
+     "screw_H2"
+    ],
+    "width": 48.2
+   },
+   {
+    "between": [
+     "usb_c",
+     "screw_H2"
+    ],
+    "width": 62.902
+   },
+   {
+    "between": [
+     "slots",
+     "screw_rear_L"
+    ],
+    "width": 63.367
+   },
+   {
+    "between": [
+     "slots",
+     "screw_rear_R"
+    ],
+    "width": 63.367
+   },
+   {
+    "between": [
+     "wheel_opening",
+     "screw_rear_L"
+    ],
+    "width": 69.419
+   },
+   {
+    "between": [
+     "wheel_opening",
+     "screw_rear_R"
+    ],
+    "width": 69.419
+   },
+   {
+    "between": [
+     "usb_c",
+     "screw_rear_L"
+    ],
+    "width": 75.53
+   },
+   {
+    "between": [
+     "usb_c",
+     "screw_rear_R"
+    ],
+    "width": 88.969
+   },
+   {
+    "between": [
+     "screw_H1",
+     "screw_rear_L"
+    ],
+    "width": 93.855
+   },
+   {
+    "between": [
+     "screw_H2",
+     "screw_rear_R"
+    ],
+    "width": 94.34
+   },
+   {
+    "between": [
+     "screw_H1",
+     "screw_rear_R"
+    ],
+    "width": 101.823
+   },
+   {
+    "between": [
+     "screw_H2",
+     "screw_rear_L"
+    ],
+    "width": 103.845
+   },
+   {
+    "between": [
+     "usb_c",
+     "outline at split line (z = 14)"
+    ],
+    "width": null,
+    "note": "opening crosses the split line by design (notch in both parts), so there is no web there"
+   }
+  ],
+  "limit": 1.2,
+  "limit_source": "JLC3DP instant-quote page (jlc3dp.com/3d-printing-quote): 'Wall thickness > 1.2mm, Thinnest part >= 0.8mm'; MJF page: nylon 'Recommended wall thickness 1.0mm'"
  },
  "sharp_edges_left": {
   "base": [],

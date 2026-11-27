@@ -1532,18 +1532,19 @@ def wall_thickness(part, outer, n=6000, seed=1):
     # exact B-rep (true skin point -> nearest face facing the other way); a real thin spot stays thin
     faces = [(f, f.BoundingBox()) for f in part.Faces()]
     for t in th:
+        t.append(None)
         if t[0] < (p.HINGE_T if in_hinge(t[1]) else p.WALL) - 0.02:
-            w = _exact_wall(faces, origins[t[2]], nrm[t[2]])
+            w, C = _exact_wall(faces, origins[t[2]], nrm[t[2]])
             if w < float("inf"):        # exact min distance to the inner side (<= the true ray length)
-                t[0] = w
-    th = [(t[0], t[1]) for t in th]
-    th.sort()
+                t[0], t[3] = w, C
+    th = [(t[0], t[1], t[3]) for t in th]   # (thickness, skin point, nearest inner point if re-measured)
+    th.sort(key=lambda t: t[0])
     return th
 
 
 def _exact_wall(faces, P, n, reach=3.0):
     """Exact wall thickness at a point P near the outer skin with outward normal n: P is moved onto the nearest
-    face facing along n, then the distance to the nearest face facing against n is returned."""
+    face facing along n, then (distance, point) to the nearest face facing against n is returned."""
     from OCP.BRep import BRep_Tool
     from OCP.GeomAPI import GeomAPI_ProjectPointOnSurf
     from OCP.BRepGProp import BRepGProp_Face
@@ -1571,10 +1572,10 @@ def _exact_wall(faces, P, n, reach=3.0):
         return out
     outer = [o for o in near(P) if o[1] > 0.5]
     if not outer:
-        return float("inf")
+        return float("inf"), None
     Q = min(outer)[2]
-    inner = [o[0] for o in near(Q) if o[1] < -0.2]
-    return min(inner) if inner else float("inf")
+    inner = [(o[0], o[2]) for o in near(Q) if o[1] < -0.2]
+    return min(inner) if inner else (float("inf"), None)
 
 
 def in_hinge(pt, tol=0.3):
@@ -1608,17 +1609,115 @@ def near_cut_edge(pt, d=0.75):
     return False
 
 
+def wheel_open_tool():
+    """Wheel-opening cutter (the same solid top_shell() cuts; kept separate so top_shell's cache key is unchanged)."""
+    ox0, ox1, oy0, oy1 = WOPEN
+    return solid(box(ox0, ox1, oy0, oy1, SLOT_Z0, Z_HI).edges("|Z").fillet(1.0))
+
+
+def cut_tools():
+    """Every cutter that opens the skin: slots (with their relief holes), wheel opening, USB-C opening."""
+    return {"slots": solid(slot_tool()), "wheel_opening": wheel_open_tool(), "usb_c": solid(usb_opening())}
+
+
+def on_cut_wall(pt, tools, tol=1e-3):
+    """Point lies on the boundary of an opening cutter, i.e. on a face that the cut made (slot / opening wall)."""
+    v = cq.Vertex.makeVertex(*map(float, pt)).wrapped
+    for nm, t in tools.items():
+        e = BRepExtrema_DistShapeShape(v, cq.Compound.makeCompound(t.Faces()).wrapped)
+        e.Perform()
+        if e.Value() < tol:
+            return nm
+    return None
+
+
 def wall_report(parts, ob):
-    """Thickness of the closed shell (base + top fused, so the split line is not an edge)."""
+    """Thickness of the closed shell (base + top fused, so the split line is not an edge). Readings are excluded
+    (and counted) when they are on a living hinge, within 0.75 mm of a cut rim / on the parting line, or when the
+    nearest inside surface is the wall of a slot or opening: those measure the distance to a cut face, not the
+    skin thickness. Every reading that reaches the inside of the dome (or a rim round) is kept."""
     sh = parts["base"].fuse(parts["top"])
     th = wall_thickness(sh, ob, n=12000)
+    tools = cut_tools()
     hinge = [t for t in th if in_hinge(t[1])]
-    other = [t for t in th if not in_hinge(t[1]) and not near_cut_edge(t[1])]
+    rest = [t for t in th if not in_hinge(t[1])]
+    near_rim = [t for t in rest if near_cut_edge(t[1])]
+    rest = [t for t in rest if not near_cut_edge(t[1])]
+    cut_wall = {}
+    other = []
+    for t in rest:
+        nm = on_cut_wall(t[2], tools) if (t[0] < p.WALL - 0.02 and t[2] is not None) else None
+        if nm:
+            cut_wall.setdefault(nm, []).append(t)
+        else:
+            other.append(t)
     thin = [t for t in other if t[0] < p.WALL - 0.02]
     f3 = lambda v: tuple(round(float(c), 2) for c in v)
     return dict(samples=len(th), samples_used=len(other), min_excluding_hinges=round(float(other[0][0]), 3),
                 at=f3(other[0][1]), hinge_min=round(float(min(t[0] for t in hinge)), 3) if hinge else None,
-                below_1p48=[(round(float(t[0]), 3), f3(t[1])) for t in thin[:20]], n_below_1p48=len(thin))
+                below_1p48=[(round(float(t[0]), 3), f3(t[1])) for t in thin[:20]], n_below_1p48=len(thin),
+                excluded=dict(
+                    living_hinge=len(hinge),
+                    near_cut_rim_or_parting_line=len(near_rim),
+                    nearest_inside_surface_is_cut_wall={k: len(v) for k, v in cut_wall.items()},
+                    cut_wall_readings=[dict(reading=round(float(t[0]), 3), at=f3(t[1]), cut_face_point=f3(t[2]),
+                                            opening=k) for k, v in cut_wall.items() for t in v]))
+
+
+# Web limit = the stricter JLC3DP wall rule that applies to nylon (read 2026-11-26):
+#   instant-quote page https://jlc3dp.com/3d-printing-quote, "Upload 3D models": "Wall thickness > 1.2mm, Thinnest part
+#   >= 0.8mm" (every upload, nylon included); MJF page https://jlc3dp.com/3d-printing/multi-jet-fusion, "Design
+#   Guidelines for MJF": "Recommended wall thickness 1.0mm"; PA12-HP page: "Wall thickness: 1mm".
+# The size table in https://jlc3dp.com/help/article/3D-Printing-Design-Guideline ("2. Wall Thickness", Nylon (MJF/SLS)
+# 1.0 / 1.2 / 1.5 / 2.0 / 2.0 mm for 5x5 ... 200x200 mm parts) is unlabelled size guidance ("we recommend that you
+# increase your wall thickness ..."), not a stated minimum. (Lower case: an upper-case constant or a P field would
+# enter every stage's cache key and force a full rebuild.)
+web_min_jlc = 1.2
+
+
+def opening_volumes():
+    """Each opening as the exact material its cutter removes from the shell (cutter x hollow shell): slots with
+    relief holes, wheel opening, USB-C opening, and the 4 cover-screw holes through the floor (countersink +
+    clearance hole)."""
+    hol = hollow()[1]
+    out = {k: solid(t.intersect(hol)) for k, t in cut_tools().items()}
+    for nm, (sx, sy) in zip(("screw_H1", "screw_H2", "screw_rear_L", "screw_rear_R"), COVER_SCREWS):
+        csk = cq.Solid.makeCone(p.CSK_D / 2 + 1.0, 0.0, p.CSK_D / 2 + 1.0, cq.Vector(sx, sy, -1.0))
+        hole = solid(cyl_z(sx, sy, -1, p.H_BASE + 1, p.SCREW_CLEAR_D))
+        out[nm] = solid(csk.fuse(hole).intersect(hol))
+    return out
+
+
+def web_report():
+    """Material width between every pair of openings, and from each opening to the part's outer edge (the outline
+    at the split line z = H_BASE, and for openings in the base also at the bottom, z = 0). Exact B-rep distance
+    between the removed volumes, i.e. between the cut walls. Fails below web_min_jlc."""
+    vols = opening_volumes()
+    names = list(vols)
+    webs = []
+    for i in range(len(names)):
+        for j in range(i + 1, len(names)):
+            webs.append(dict(between=(names[i], names[j]), width=round(min_dist(vols[names[i]], vols[names[j]]), 3)))
+    edge = {"outline at split line (z = %.0f)" % p.H_BASE: PLAN_EDGE.translate(cq.Vector(0, 0, p.H_BASE)),
+            "outline at bottom (z = 0)": PLAN_EDGE}
+    for nm, v in vols.items():
+        for en, e in edge.items():
+            if en.startswith("outline at bottom") and v.BoundingBox().zmin > p.H_BASE - 1e-6:
+                continue                      # openings in the top part only: the top's outer edge is the split line
+            if nm == "usb_c" and en.startswith("outline at split"):
+                webs.append(dict(between=(nm, en), width=None, note="opening crosses the split line by design "
+                                 "(notch in both parts), so there is no web there"))
+                continue
+            d = BRepExtrema_DistShapeShape()
+            d.LoadS1(cq.Compound.makeCompound(v.Faces()).wrapped)
+            d.LoadS2(e.wrapped)
+            d.Perform()
+            webs.append(dict(between=(nm, en), width=round(d.Value(), 3)))
+    measured = [w for w in webs if w["width"] is not None]
+    fails = [w for w in measured if w["width"] < web_min_jlc]
+    mn = min(measured, key=lambda w: w["width"])
+    return dict(min_web=mn, below_limit=fails, passed=not fails, webs=sorted(webs, key=lambda w: (w["width"] is None,
+                                                                                               w["width"] or 0)))
 
 
 _SH = {}
@@ -1635,6 +1734,8 @@ def _pool_job(job):
     kind, a, b = job
     if kind == "w":
         return wall_report(_SH["__parts"], _SH["ob"])
+    if kind == "web":
+        return web_report()
     if kind == "v":
         return common_volume(_SH[a], _SH[b])
     return min_dist(_SH[a], _SH[b])
@@ -1657,7 +1758,10 @@ def shape_hash(s):
 
 
 _check_src = {"d": ("min_dist",), "v": ("common_volume",),
-              "w": ("wall_report", "wall_thickness", "_exact_wall", "in_hinge", "_near_slot", "near_cut_edge")}
+              "w": ("wall_report", "wall_thickness", "_exact_wall", "in_hinge", "_near_slot", "near_cut_edge",
+                    "cut_tools", "wheel_open_tool", "on_cut_wall", "slot_tool", "usb_opening"),
+              "web": ("web_report", "opening_volumes", "min_dist", "cut_tools", "wheel_open_tool", "slot_tool",
+                      "usb_opening")}
 
 
 def run_parallel(shapes, jobs, n=None):
@@ -1672,7 +1776,7 @@ def run_parallel(shapes, jobs, n=None):
     def key(job):
         # each job kind is keyed on its own code only: a change to the wall check does not re-run the distances
         kind, a, b = job
-        deps = (h["__parts"], h["ob"]) if kind == "w" else (h[a], h[b])
+        deps = (h["__parts"], h["ob"]) if kind in ("w", "web") else (h[a], h[b])
         return hashlib.sha1(repr((salt[kind], kind, deps)).encode()).hexdigest()[:20]
     cdir = os.path.join(CACHE_DIR, "checks")
     os.makedirs(cdir, exist_ok=True)
@@ -1687,7 +1791,7 @@ def run_parallel(shapes, jobs, n=None):
     print(f"checks: {len(jobs) - len(todo)} cached, {len(todo)} to run", flush=True)
     if todo:
         # slow jobs first (anything on the lofted top / base skin), so the pool does not end on one long query
-        heavy = ("w", "top", "base", "ob", "cav", "ribs_removed")
+        heavy = ("w", "web", "top", "base", "ob", "cav", "ribs_removed")
         todo.sort(key=lambda j: -sum(x in heavy for x in j))
         with tempfile.NamedTemporaryFile(suffix=".pkl", delete=False) as f:
             pickle.dump(shapes, f)
@@ -1722,7 +1826,7 @@ def run_checks(ob, parts, refs, sharp):
     shapes = {**allp, "ribs_removed": ribs_removed, "pe": pe, "ob": ob, "cav": cav, "__parts": parts,
               **{"comp:" + r: c for r, c in comps}}
     pair_names = [(names[i], names[j]) for i in range(len(names)) for j in range(i + 1, len(names))]
-    jobs = [("w", "", "")] + [(k, a, b) for a, b in pair_names for k in ("d", "v")]
+    jobs = [("w", "", ""), ("web", "", "")] + [(k, a, b) for a, b in pair_names for k in ("d", "v")]
     jobs += [("d", "battery", "ribs_removed")] + [("d", "battery", k) for k in allp if k not in ("battery", "base")]
     jobs += [("d", "pe", k) for k in allp] + [("d", "ob", "cav")]
     jobs += [("d", nm, "comp:" + r) for nm in CLOSEST_PARTS for r, _ in comps]
@@ -1780,6 +1884,13 @@ def run_checks(ob, parts, refs, sharp):
     R["left_key_rim"] = dict(slot_outer_edge_x=-(p.BTN_X + p.SLOT), wall_outside_slot_min=round(float(dd[i]), 3),
                              at=tuple(round(float(c), 2) for c in w2[i]), required=1.5)
     R["wall_thickness"] = Q[("w", "", "")]
+    R["webs"] = dict(Q[("web", "", "")])
+    # the limit is applied here, not inside the cached job, so a change of web_min_jlc always takes effect
+    meas = [w for w in R["webs"]["webs"] if w["width"] is not None]
+    R["webs"].update(limit=web_min_jlc, limit_source="JLC3DP instant-quote page (jlc3dp.com/3d-printing-quote): "
+                     "'Wall thickness > 1.2mm, Thinnest part >= 0.8mm'; MJF page: nylon 'Recommended wall thickness 1.0mm'",
+                     below_limit=[w for w in meas if w["width"] < web_min_jlc],
+                     passed=all(w["width"] >= web_min_jlc for w in meas))
     # exact B-rep minimum distance between the outer skin and the cavity skin (walls + floor + top)
     R["wall_thickness"]["shell_skin_exact_min"] = round(Q[("d", "ob", "cav")], 4)
     R["sharp_edges_left"] = {k: [dict(at=tuple(round(c, 2) for c in e.positionAt(0.5).toTuple()),
@@ -1970,7 +2081,8 @@ def main():
         json.dump(R, f, indent=1, default=str)
     print(json.dumps(R["stl"], indent=1))
     print(json.dumps({k: R[k] for k in ("overlaps", "unexpected_contacts", "key_centring", "height",
-                                         "left_key_rim", "wall_thickness")}, indent=1, default=str))
+                                         "left_key_rim", "wall_thickness", "front_posts", "webs")}, indent=1,
+                     default=str))
     print("sharp edges left:", {k: len(v) for k, v in R["sharp_edges_left"].items()}, R["edge_rule"])
     print(f"done in {time.time() - t0:.1f} s")
 
