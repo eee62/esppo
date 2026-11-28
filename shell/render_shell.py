@@ -13,7 +13,10 @@ Views
   side_right.png        right side
   section_keys.png      cross-section through both keys: vertical plane through the SW_L1 and SW_R1 centres,
                         rear half kept, with the board, switches, battery and plungers in place
-Colours: grey top over a black base and wheel, white background.
+  compare_*.png         every outside view with the same view of the reference STL (reference/Mini Computer Mouse_2.stl,
+                        scaled and placed as the shell model uses it) beside it, same camera and scale
+One neutral colour, white background. Shapes are meshed at 0.01 mm absolute deflection and shaded with normals
+taken from the exact B-rep surface at every mesh node (no normal averaging, so no shading streaks).
 """
 import math
 import os
@@ -31,41 +34,120 @@ OUT = os.path.join(HERE, "renders")
 W, H = 1600, 1200
 SS = 2          # supersampling factor
 
-COLORS = {
-    "top": (0.74, 0.75, 0.77), "base": (0.07, 0.07, 0.08), "wheel": (0.03, 0.03, 0.03),
-    "keys": (0.95, 0.50, 0.12), "board": (0.10, 0.50, 0.25), "switches": (0.15, 0.15, 0.15),
-    "battery": (0.85, 0.72, 0.25),
-}
+NEUTRAL = (0.72, 0.72, 0.70)
+COLORS = {k: NEUTRAL for k in ("top", "base", "wheel", "keys", "board", "switches", "battery")}
+REF_PHOTO = os.path.join(HERE, "reference", "mouse_reference.jpg")
 
 
 def load_step(name):
     return m.solid(cq.importers.importStep(os.path.join(HERE, f"{name}.step")).val())
 
 
-def to_polydata(shape, tol=0.02, ang=0.15):
-    vs, fs = shape.tessellate(tol, ang)
-    pts = vtk.vtkPoints()
-    for v in vs:
-        pts.InsertNextPoint(v.x, v.y, v.z)
-    tris = vtk.vtkCellArray()
-    for a, b, c in fs:
+def to_polydata(shape, lin=None, ang=0.1):
+    """Triangles from an absolute-deflection mesh; point normals from the exact surface at each node's (u, v).
+    0.01 mm for the parametric skin; 0.05 mm for the reference skin (one dense B-spline face: 0.01 mm runs out of
+    memory, and 0.05 mm is below a pixel at these image sizes)."""
+    if lin is None:
+        lin = 0.05 if m.REF is not None else 0.01
+    from OCP.BRep import BRep_Tool
+    from OCP.BRepMesh import BRepMesh_IncrementalMesh
+    from OCP.BRepTools import BRepTools
+    from OCP.BRepGProp import BRepGProp_Face
+    from OCP.TopLoc import TopLoc_Location
+    from OCP.TopAbs import TopAbs_REVERSED
+    from OCP.gp import gp_Pnt, gp_Vec
+    BRepTools.Clean_s(shape.wrapped)
+    m._imesh(shape, lin, ang)          # surface-deflection controlled (see shell_model._imesh)
+    pts, nrm, tris = vtk.vtkPoints(), vtk.vtkFloatArray(), vtk.vtkCellArray()
+    nrm.SetNumberOfComponents(3)
+    off = 0
+    for f in shape.Faces():
+        loc = TopLoc_Location()
+        tri = BRep_Tool.Triangulation_s(f.wrapped, loc)
+        if tri is None:
+            continue
+        tr = loc.Transformation()
+        rev = f.wrapped.Orientation() == TopAbs_REVERSED
+        gp = BRepGProp_Face(f.wrapped)
+        for i in range(1, tri.NbNodes() + 1):
+            P = tri.Node(i).Transformed(tr)
+            pts.InsertNextPoint(P.X(), P.Y(), P.Z())
+            N = gp_Vec(0, 0, 1)
+            if tri.HasUVNodes():
+                uv = tri.UVNode(i)
+                X = gp_Pnt()
+                gp.Normal(uv.X(), uv.Y(), X, N)    # global frame, oriented by the face orientation
+                if N.Magnitude() > 1e-12:
+                    N.Normalize()
+            nrm.InsertNextTuple3(N.X(), N.Y(), N.Z())
+        for i in range(1, tri.NbTriangles() + 1):
+            a_, b_, c_ = tri.Triangle(i).Get()
+            ids = (a_, c_, b_) if rev else (a_, b_, c_)
+            t = vtk.vtkTriangle()
+            for k, idx in enumerate(ids):
+                t.GetPointIds().SetId(k, off + idx - 1)
+            tris.InsertNextCell(t)
+        off += tri.NbNodes()
+    pd = vtk.vtkPolyData(); pd.SetPoints(pts); pd.SetPolys(tris); pd.GetPointData().SetNormals(nrm)
+    return pd
+
+
+def mesh_actor(tm, color=NEUTRAL, specular=0.25):
+    """Actor for a trimesh (the reference STL): smooth normals with a 30 deg feature angle."""
+    pts, tris = vtk.vtkPoints(), vtk.vtkCellArray()
+    for q in tm.vertices:
+        pts.InsertNextPoint(*map(float, q))
+    for f in tm.faces:
         t = vtk.vtkTriangle()
-        t.GetPointIds().SetId(0, a); t.GetPointIds().SetId(1, b); t.GetPointIds().SetId(2, c)
+        for k in range(3):
+            t.GetPointIds().SetId(k, int(f[k]))
         tris.InsertNextCell(t)
     pd = vtk.vtkPolyData(); pd.SetPoints(pts); pd.SetPolys(tris)
-    nrm = vtk.vtkPolyDataNormals(); nrm.SetInputData(pd); nrm.SetFeatureAngle(35); nrm.SplittingOn(); nrm.Update()
-    return nrm.GetOutput()
+    nm = vtk.vtkPolyDataNormals(); nm.SetInputData(pd); nm.SetFeatureAngle(30); nm.Update()
+    mp = vtk.vtkPolyDataMapper(); mp.SetInputConnection(nm.GetOutputPort())
+    a = vtk.vtkActor(); a.SetMapper(mp)
+    pr = a.GetProperty(); pr.SetColor(*color); pr.SetSpecular(specular); pr.SetSpecularPower(30)
+    pr.SetAmbient(0.18); pr.SetDiffuse(0.82); pr.SetInterpolationToPhong()
+    return a
+
+
+def compare_ref(view_png, ref_png, out_png):
+    """The shell render and the same view of the reference STL, side by side."""
+    from PIL import ImageDraw
+    a = Image.open(os.path.join(OUT, view_png)).convert("RGB")
+    b = Image.open(os.path.join(OUT, ref_png)).convert("RGB")
+    canvas = Image.new("RGB", (a.width + b.width, a.height), "white")
+    canvas.paste(a, (0, 0)); canvas.paste(b, (a.width, 0))
+    ImageDraw.Draw(canvas).text((a.width + 24, a.height - 40), "Reference STL, same scale and camera", fill=(60, 60, 60))
+    canvas.save(os.path.join(OUT, out_png), optimize=True)
+    print("wrote", os.path.join(OUT, out_png))
 
 
 def actor(shape, color, specular=0.25):
     mp = vtk.vtkPolyDataMapper(); mp.SetInputData(to_polydata(shape))
     a = vtk.vtkActor(); a.SetMapper(mp)
     pr = a.GetProperty(); pr.SetColor(*color); pr.SetSpecular(specular); pr.SetSpecularPower(30)
-    pr.SetAmbient(0.15); pr.SetDiffuse(0.85)
+    pr.SetAmbient(0.18); pr.SetDiffuse(0.82); pr.SetInterpolationToPhong()
     return a
 
 
-def render(actors, fname, direction, view_up=(0, 0, 1), parallel=True, zoom=1.0, title=None):
+def compare(view_png, out_png, label="Reference photo"):
+    """The render with the reference photo beside it, both on white, photo scaled to the render height / 2."""
+    r = Image.open(os.path.join(OUT, view_png)).convert("RGB")
+    ph = Image.open(REF_PHOTO).convert("RGB")
+    sc = (r.height * 0.6) / ph.height
+    ph = ph.resize((int(ph.width * sc), int(ph.height * sc)), Image.LANCZOS)
+    pad = 40
+    canvas = Image.new("RGB", (r.width + ph.width + 2 * pad, r.height), "white")
+    canvas.paste(r, (0, 0))
+    canvas.paste(ph, (r.width + pad, (r.height - ph.height) // 2))
+    from PIL import ImageDraw
+    ImageDraw.Draw(canvas).text((r.width + pad, (r.height - ph.height) // 2 - 30), label, fill=(60, 60, 60))
+    canvas.save(os.path.join(OUT, out_png), optimize=True)
+    print("wrote", os.path.join(OUT, out_png))
+
+
+def render(actors, fname, direction, view_up=(0, 0, 1), parallel=True, zoom=1.0, title=None, cam_state=None):
     r = vtk.vtkRenderer()
     r.SetBackground(1.0, 1.0, 1.0)
     for a in actors:
@@ -79,12 +161,18 @@ def render(actors, fname, direction, view_up=(0, 0, 1), parallel=True, zoom=1.0,
         t = vtk.vtkTextActor(); t.SetInput(title); tp = t.GetTextProperty()
         tp.SetFontSize(28 * SS); tp.SetColor(0.2, 0.2, 0.2); t.SetPosition(24 * SS, (H - 50) * SS); r.AddViewProp(t)
     cam = r.GetActiveCamera()
-    cam.SetFocalPoint(0, 0, 17)
-    cam.SetPosition(*[d * 400 for d in direction])
-    cam.SetViewUp(*view_up)
-    cam.SetParallelProjection(parallel)
-    r.ResetCamera()
-    cam.Zoom(zoom)
+    if cam_state:                       # same camera as an earlier render (side-by-side comparisons)
+        cam.SetParallelProjection(parallel)
+        cam.SetFocalPoint(*cam_state[0]); cam.SetPosition(*cam_state[1]); cam.SetViewUp(*cam_state[2])
+        cam.SetParallelScale(cam_state[3]); cam.SetClippingRange(1, 5000)
+    else:
+        cam.SetFocalPoint(0, 0, 17)
+        cam.SetPosition(*[d * 400 for d in direction])
+        cam.SetViewUp(*view_up)
+        cam.SetParallelProjection(parallel)
+        r.ResetCamera()
+        cam.Zoom(zoom)
+    state = (cam.GetFocalPoint(), cam.GetPosition(), cam.GetViewUp(), cam.GetParallelScale())
     w = vtk.vtkRenderWindow(); w.SetOffScreenRendering(1); w.SetSize(W * SS, H * SS); w.AddRenderer(r)
     w.Render()
     f = vtk.vtkWindowToImageFilter(); f.SetInput(w); f.Update()
@@ -93,6 +181,7 @@ def render(actors, fname, direction, view_up=(0, 0, 1), parallel=True, zoom=1.0,
     # anti-alias by supersampling (FXAA renders black under OSMesa)
     Image.open(path).convert("RGB").resize((W, H), Image.LANCZOS).save(path, optimize=True)
     print("wrote", os.path.join(OUT, fname))
+    return state
 
 
 def main():
@@ -100,11 +189,22 @@ def main():
     parts = {k: load_step(k) for k in ("top", "base", "wheel")}
     shell_actors = [actor(parts[k], COLORS[k]) for k in ("top", "base", "wheel")]
 
-    render(shell_actors, "iso_front_left.png", (-1.0, 1.1, 0.8), zoom=1.15, title="Front-left")
-    render(shell_actors, "iso_rear_right.png", (1.0, -1.1, 0.8), zoom=1.15, title="Rear-right")
-    render(shell_actors, "top.png", (0, 0, 1), view_up=(0, 1, 0), zoom=0.95, title="Top (front up)")
-    render(shell_actors, "side_left.png", (-1, 0, 0), zoom=1.2, title="Left side (USB-C opening)")
-    render(shell_actors, "side_right.png", (1, 0, 0), zoom=1.2, title="Right side")
+    views = [("iso_front_left", (-1.0, 1.1, 0.8), (0, 0, 1), 1.15, "Front-left"),
+             ("iso_rear_right", (1.0, -1.1, 0.8), (0, 0, 1), 1.15, "Rear-right"),
+             ("top", (0, 0, 1), (0, 1, 0), 0.95, "Top (front up)"),
+             ("side_left", (-1, 0, 0), (0, 0, 1), 1.2, "Left side (USB-C opening)"),
+             ("side_right", (1, 0, 0), (0, 0, 1), 1.2, "Right side")]
+    ref_actor = None
+    if m.REF is not None:
+        import silhouette
+        ref_actor = mesh_actor(silhouette.ref_mesh(m.REF["fit"]))
+    for name, d, up, z, title in views:
+        st = render(shell_actors, name + ".png", d, view_up=up, zoom=z, title=title)
+        if ref_actor is not None:
+            render([ref_actor], "ref_" + name + ".png", d, view_up=up, title=title + " - reference STL", cam_state=st)
+            compare_ref(name + ".png", "ref_" + name + ".png", "compare_" + name + ".png")
+        elif name in ("iso_front_left", "iso_rear_right", "top"):
+            compare(name + ".png", "compare_" + name + ".png")
 
     # cross-section through the keys: vertical plane through both switch centres (SW_L1 and SW_R1 sit 1.5 mm
     # apart in Y, so the plane is turned ~2.4 deg about Z); keep the rear half and look at the cut from the front

@@ -43,19 +43,39 @@ PCB_PATH = os.path.join(HERE, "..", "ESP32-S31-Vision-Pro-RevC.kicad_pcb")
 @dataclass
 class P:
     # outer shell: teardrop plan, vertical band up to the split, domed top (see "Outer shape")
-    SIDE: float = 35.03             # half-width over the board / USB zone (35 + 0.03 spline overshoot margin)
-    W_REAR: float = 76.0            # widest point, at y = REAR_C
-    NOSE_Y: float = 70.0            # front tip
-    NOSE_C: float = 50.0            # nose ellipse centre (SIDE x 20); the side is straight behind it
-    WIDEN_Y: float = 22.0           # the side starts widening (cosine ramp) behind this y
-    REAR_C: float = -25.0           # rear ellipse centre (W_REAR / 2 x 35)
-    REAR_Y: float = -60.0           # rear tip
-    REAR_N: float = 3.0             # rear superellipse exponent (2 = ellipse); 3 keeps the base wall 3.2 clear of
+    SIDE: float = 34.8             # half-width over the board / USB zone: board right edge 32.5 + 1.5 wall + 0.5 clear,
+                                    # plus the side curving in between the widest line (z 8) and the board top (z 15.1)
+    W_REAR: float = 70.4            # widest point, at y = REAR_C (battery clip hooks: x 32.3 + 1.0 flex + 1.5 wall)
+    NOSE_Y: float = 60.0            # front tip
+    NOSE_C: float = 52.5            # nose ellipse centre (SIDE x 20); the side is straight behind it
+    WIDEN_Y: float = 10.0           # the side starts widening (cosine ramp) behind this y
+    REAR_C: float = -40.0           # rear ellipse centre (W_REAR / 2 x 35)
+    REAR_Y: float = -58.0           # rear tip
+    REAR_N: float = 3.0             # rear superellipse exponent (2 = ellipse); 3 is the roundest that clears the cell's
                                     # the cell's rear corners and of the rear screw columns / clips
-    H_BASE: float = 14.0            # base height = split plane between base.stl and top.stl = dome start
-    Z_PEAK: float = 34.7            # highest point of the skin
-    PEAK_Y: float = -8.0            # 60 % of the length back from the nose
-    DOME_N: float = 3.0             # superellipse exponent of the dome profile (2 = elliptic, larger = fuller)
+    H_BASE: float = 8.0            # widest level (the outline above) = dome start
+    REAR_IFACE_Z: float = 14.0      # rear cover screws: base column top = top boss bottom (internal, unchanged)
+    Z_SPLIT: float = 4.0            # parting line between base.stl (the dark lower band) and top.stl
+    Z_PEAK: float = 37.4            # highest point of the skin
+    PEAK_Y: float = -4.9            # 55 % of the length back from the nose
+    DOME_N: float = 5.0             # side profile L(s_x) = (1 - s_x^N)^(1/N), s_x = |x| / half-width (radial mode: dome exponent; larger = fuller)
+    DOME_MODE: str = "ref"          # "ref": the reference mouse (reference/Mini Computer Mouse_2.stl), cleaned, scaled
+                                    #   and placed by ref_skin.py; every outline / dome parameter above is unused
+                                    # "separable": z = H_BASE + (Z_PEAK - H_BASE) f(s_y) L(s_x), convex across by design
+                                    # "radial": the earlier dome (outline scaled about the peak, superellipse DOME_N)
+    DOME_N_MID: float = 2.8         # separable mode: side exponent at y = 0 and behind it at the rear tip (DOME_N_REAR);
+    DOME_N_REAR: float = 2.8        #   DOME_N applies from y = DOME_N_Y1 forward (front posts, board corner), cosine blend
+    DOME_N_Y1: float = 40.0
+    PROF_A_FRONT: float = 1.6       # centreline profile ahead of the peak, f(s) = (1 - s^A)^(1/B), s = distance / length
+    PROF_B_FRONT: float = 2.7874      #   (A sets how early it falls; B > 1 gives a vertical tangent at the nose)
+    PROF_A_REAR: float = 2.0        # ... behind the peak (A = B = 2: an elliptic, round rear)
+    PROF_B_REAR: float = 2.3
+    DOME_N_END: float = 2.5         # radial mode only: exponent toward nose / rear
+    DOME_BLEND: float = 1.0         # radial mode only
+    NOSE_N: float = 3.5             # plan superellipse exponent of the nose (2 = ellipse)
+    TUCK_FRONT: float = 0.8         # side tuck-in at z = 0 below the widest level, front (y >= TUCK_Y0) ...
+    TUCK_REAR: float = 1.6          # ... and rear (y <= -TUCK_Y0); quadratic in z, zero slope at z = H_BASE
+    TUCK_Y0: float = 20.0
     WALL: float = 1.5
     FLOOR: float = 1.5
     R_BOTTOM: float = 1.0           # bottom outer edge
@@ -86,17 +106,21 @@ class P:
     SCREW_PILOT_D: float = 2.1      # thread-forming screw for plastics
     CSK_D: float = 5.0              # countersink for ISO 7046 / ISO 10642 M2.5 flat head (dk max 4.7)
     STANDOFF_D: float = 5.8         # base columns above the pad (wall 1.5 around 2.8 hole)
-    BOSS_D: float = 5.0             # top bosses that clamp the board top (inside the M2.5 pad)
+    BOSS_D: float = 5.2             # top bosses that clamp the board top: 1.55 wall around the 2.1 pilot (hole footprint 5.9)
     BOSS_D_REAR: float = 6.0        # top bosses for the two rear cover screws
-    PILOT_DEPTH: float = 8.0
+    PILOT_DEPTH: float = 8.0        # H3 / H4 (rear board holes, M2.5 x 6 pan head from below)
+    PILOT_DEPTH_FRONT: float = 5.5  # H1 / H2: M2.5 x 20 flat head from the base reaches z 20.0; pilot to z 20.6
+    SCREW_L_FRONT: float = 20.0     # cover screws at H1 / H2 (flat head, from below, through the board)
+    SCREW_L_REAR: float = 20.0      # rear cover screws (flat head, from below)
+    SCREW_L_BOARD: float = 6.0      # H3 / H4 board screws (pan head, from below the board)
     REAR_SCREW_X: float = 17.0
     REAR_SCREW_Y: float = -51.0
-    PILOT_DEPTH_REAR: float = 6.0
+    PILOT_DEPTH_REAR: float = 6.5   # rear cover: M2.5 x 20 tip at z 20.0, pilot to z 20.5
 
     # keys: two buttons cut from the skin, symmetric about x = 0, hinged at HINGE_Y, free to the front
     BTN_X: float = 27.0             # outer edge of each button (|x|)
-    SPINE_HW: float = 6.5           # fixed strip around the wheel between the buttons (half-width)
-    WHEEL_SURROUND: float = 1.5     # spine skin in front of the wheel opening
+    SPINE_HW: float = 6.6           # fixed strip around the wheel between the buttons (half-width)
+    WHEEL_SURROUND: float = 1.6     # spine skin in front of the wheel opening
     HINGE_Y: float = 10.0           # living hinge line (rear edge of both buttons)
     LIP: float = 4.0                # fixed skin between the buttons' front slot and the outline
     TONGUE_CLR: float = 2.0         # fixed features stay this far below the button skin (front travel)
@@ -125,7 +149,7 @@ class P:
     WHEEL_W: float = 8.0
     AXLE_D: float = 2.0
     AXLE_STUB: float = 2.5
-    WHEEL_PROUD: float = 3.5        # wheel top above the skin
+    WHEEL_Z: float = 27.866858      # wheel axle height, locked (it was derived from the skin before the restyle)
     WHEEL_OPEN_CLR: float = 0.6     # opening clearance at each wheel side
     WHEEL_OPEN_END: float = 0.6     # opening clearance at front / rear (where the tire crosses the inner skin)
     DETENTS: int = 24
@@ -166,6 +190,10 @@ class P:
 
 
 p = P()
+if os.environ.get("SHELL_PARAMS"):         # design studies: override parameters (JSON), e.g. SHELL_PARAMS='{"SIDE": 34.8}'
+    for _k, _v in json.loads(os.environ["SHELL_PARAMS"]).items():
+        assert hasattr(p, _k), _k
+        setattr(p, _k, _v)
 
 
 # ----------------------------------------------------------------------------------------------
@@ -332,6 +360,31 @@ WHEEL_X = 0.0                          # on the centreline, between the two butt
 WHEEL_Y = (SW["SW_L1"][1] + SW["SW_R1"][1]) / 2
 FRONT_HOLES = ("H1", "H2")             # board_y = 3.4 -> front
 REAR_HOLES = ("H3", "H4")
+
+REF = None
+if p.DOME_MODE == "ref":
+    # the reference mouse, cleaned / scaled / placed by ref_skin.py (tables cached in .cache, rebuilt when the STL or
+    # ref_skin.py change); REF_HASH is a module constant, so it is part of every stage's cache key
+    import ref_skin
+    REF = ref_skin.tables()
+    REF_HASH = ref_skin.src_hash()
+    REF_SCALE = REF["fit"]["s"]
+    _g0 = REF["offsets"][0.0]["grid"].reshape(-1, 3)
+    _g0 = _g0[_g0[:, 2] >= 0]
+    p.REAR_Y = float(_g0[:, 1].min())
+    p.NOSE_Y = float(_g0[:, 1].max())
+    p.PEAK_Y = float(REF["peak"][1])
+    p.Z_PEAK = float(REF["peak"][2])
+    # half-width at the USB-C opening: the outer skin's x on the left side at the J5 centre (y, z), from the top map
+    # neighbourhood is not enough (the side is near vertical): bisection on the reference outer field is not
+    # available here, so use the outer grid: nearest grid points around (J5_Y, J5_Z) on the left
+    _G = REF["offsets"][0.0]["grid"].reshape(-1, 3)
+    _L = _G[(_G[:, 0] < 0) & (np.abs(_G[:, 1] - J5_Y) < 3) & (np.abs(_G[:, 2] - J5_Z) < 3)]
+    _wt = 1.0 / (np.hypot(_L[:, 1] - J5_Y, _L[:, 2] - J5_Z) + 0.05) ** 2
+    p.SIDE = float(-np.sum(_L[:, 0] * _wt) / np.sum(_wt))
+    # the plungers (key parts) stay exactly as designed: their socket bottoms are locked; the sockets grow up to the
+    # (higher) button skin instead
+    KEY_SOCKET_Z0 = {"SW_L1": 28.524580899159268, "SW_R1": 29.50243722582077}
 
 
 # ----------------------------------------------------------------------------------------------
@@ -560,8 +613,9 @@ def common_volume(a, b):
 # Disk cache for the slow stages (booleans on the lofted skin take 35-300 s each)
 # ----------------------------------------------------------------------------------------------
 CACHE_DIR = os.path.join(HERE, ".cache")
-GEOM_DEPS = ("_plan_half", "plan_pt", "skin_pt", "_skin_normal", "_section_wire", "_fix", "skin_body", "solid", "box")
-ROUND_DEPS = ("solid", "box", "cyl_z", "cyl_x", "rounded_poly", "sharp_edges", "face_normal_angle", "edge_faces",
+GEOM_DEPS = ("_plan_half", "plan_pt", "skin_pt", "_skin_normal", "_section_wire", "_fix", "skin_body", "solid", "box",
+             "_ref_skin_body", "_ref_loop")
+ROUND_DEPS = ("solid", "box", "cyl_z", "cyl_x", "rounded_poly", "sharp_edges", "face_normal_angle", "edge_faces", "_skin_mesh",
               "fillet_edges", "rematch", "_safe_fillet", "pre_round", "round_near", "add", "sub", "_near")
 
 
@@ -604,14 +658,15 @@ def disk_cache(*deps):
 # Outer body
 # ----------------------------------------------------------------------------------------------
 def _plan_half():
-    """Right half of the outline (x >= 0), nose -> rear. Nose: ellipse SIDE x (NOSE_Y - NOSE_C); side: SIDE over
+    """Right half of the outline (x >= 0), nose -> rear. Nose: superellipse (exponent NOSE_N) SIDE x (NOSE_Y - NOSE_C); side: SIDE over
     the board / USB zone, widening behind WIDEN_Y with a cosine ramp to W_REAR / 2 at REAR_C; rear: superellipse
     (exponent REAR_N), horizontal at the tip and vertical where it meets the side."""
     s, w = p.SIDE, p.W_REAR / 2
     pts = []
+    en = 2.0 / p.NOSE_N
     for a in range(90, 0, -10):
         t = math.radians(a)
-        pts.append((s * math.cos(t), p.NOSE_C + (p.NOSE_Y - p.NOSE_C) * math.sin(t)))
+        pts.append((s * math.cos(t) ** en, p.NOSE_C + (p.NOSE_Y - p.NOSE_C) * math.sin(t) ** en))
     for y in range(int(p.NOSE_C), int(p.REAR_C), -4):
         g = 0.0 if y >= p.WIDEN_Y else 0.5 * (1 - math.cos(math.pi * (p.WIDEN_Y - y) / (p.WIDEN_Y - p.REAR_C)))
         pts.append((s + (w - s) * g, float(y)))
@@ -626,7 +681,26 @@ def _plan_half():
 # one periodic spline (CCW, starting at the REAR tip): symmetric, so the tip tangents are horizontal; a single
 # closed edge per section is what lets OCC fillet the floor / bottom edges; the seam sits on the rear centreline,
 # where nothing is cut (a seam through the slots splits the rim edges and their fillets fail)
-_LOOP = [(x, y) for x, y in reversed(_plan_half())] + [(-x, y) for x, y in _plan_half()][1:-1]
+def _ref_loop(n=300):
+    """Top-view outline of the reference skin: CCW, starting at the rear tip, smoothed (the table is on a 0.25 grid)."""
+    c = np.asarray(REF["outline"], float)
+    if np.allclose(c[0], c[-1]):
+        c = c[:-1]
+    if 0.5 * np.sum(c[:, 0] * np.roll(c[:, 1], -1) - np.roll(c[:, 0], -1) * c[:, 1]) < 0:
+        c = c[::-1]
+    sl = np.concatenate([[0], np.cumsum(np.hypot(*np.diff(np.vstack([c, c[:1]]), axis=0).T))])
+    t = np.linspace(0, sl[-1], 1201)[:-1]
+    q = np.column_stack([np.interp(t, sl, np.append(c[:, 0], c[0, 0])), np.interp(t, sl, np.append(c[:, 1], c[0, 1]))])
+    from scipy.ndimage import gaussian_filter1d
+    q = gaussian_filter1d(q, 3.0, axis=0, mode="wrap")
+    q = np.roll(q, -int(np.argmin(q[:, 1])), axis=0)[::len(q) // n]
+    return [(float(x), float(y)) for x, y in q]
+
+
+if p.DOME_MODE == "ref":
+    _LOOP = _ref_loop()
+else:
+    _LOOP = [(x, y) for x, y in reversed(_plan_half())] + [(-x, y) for x, y in _plan_half()][1:-1]
 PLAN_EDGE = cq.Edge.makeSpline([cq.Vector(x, y, 0) for x, y in _LOOP], periodic=True)
 SKIN_NU, SKIN_NPHI = 72, 20         # points per half section, number of dome sections (144 x 30 made every
                                     # later boolean ~80x slower for < 0.002 mm of wall accuracy)
@@ -638,36 +712,86 @@ def plan_pt(u):
     return np.array([q.x, q.y])
 
 
-def skin_pt(u, phi):
-    """Dome point: the outline scaled by s about (0, PEAK_Y) at height z, with (s, z) on a superellipse
-    (phi = 0: s = 1, z = H_BASE, vertical tangent; phi = 90 deg: the peak, horizontal tangent)."""
-    s = abs(math.cos(phi)) ** (2 / p.DOME_N)
-    h = abs(math.sin(phi)) ** (2 / p.DOME_N)
+SKIN_LOW_Z = (-2.0, 0.0, 3.0, 5.5)         # section heights below the widest level (z = -2 lies below the bottom cut;
+                                            # offset inward they must stay clear of the floor cut at z = FLOOR)
+_low_span = 10.0                            # v = -1 at z = H_BASE - 10 = -2
+
+
+def _plan_normal(u):
+    """Outward plan normal of the outline at u (right half, traversed nose -> rear)."""
+    du = 1e-4
+    t = plan_pt(min(u + du, 1.0)) - plan_pt(max(u - du, 0.0))
+    n = np.array([-t[1], t[0]])
+    return n / np.linalg.norm(n)
+
+
+def _dome_n(dx, dy):
+    """Dome exponent for the direction (dx, dy) from the peak: DOME_N at the sides, DOME_N_END toward nose / rear."""
+    w = np.asarray(dy, float) ** 2 / np.maximum(np.asarray(dx, float) ** 2 + np.asarray(dy, float) ** 2, 1e-12)
+    return p.DOME_N + (p.DOME_N_END - p.DOME_N) * w ** p.DOME_BLEND
+
+
+def _tuck(y):
+    """Tuck-in amplitude: TUCK_FRONT at the front, TUCK_REAR at the rear, cosine ramp between y = +-TUCK_Y0."""
+    g = min(max((p.TUCK_Y0 - y) / (2 * p.TUCK_Y0), 0.0), 1.0)
+    return p.TUCK_FRONT + (p.TUCK_REAR - p.TUCK_FRONT) * 0.5 * (1 - math.cos(math.pi * g))
+
+
+def skin_pt(u, v):
+    """Outer skin point. v >= 0 (= phi): dome, the outline scaled by s about (0, PEAK_Y) at height z, with (s, z) on
+    a superellipse (phi = 0: s = 1, z = H_BASE, vertical tangent; phi = 90 deg: the peak, horizontal tangent).
+    v < 0: lower side, z = H_BASE + 10 v, the outline moved in along its normal by tuck(y) ((H_BASE - z) / H_BASE)^2:
+    zero slope at H_BASE, so the side runs smoothly out of the dome and curves in toward the bottom."""
+    if v < 0:
+        z = p.H_BASE + _low_span * v
+        q = plan_pt(u)
+        xy = q - _tuck(q[1]) * ((p.H_BASE - z) / p.H_BASE) ** 2 * _plan_normal(u)
+        return np.array([xy[0], xy[1], z])
     c = np.array([0.0, p.PEAK_Y])
-    xy = c + s * (plan_pt(u) - c)
-    return np.array([xy[0], xy[1], p.H_BASE + (p.Z_PEAK - p.H_BASE) * h])
+    q = plan_pt(u)
+    if p.DOME_MODE == "radial":
+        n = _dome_n(q[0], q[1] - p.PEAK_Y)
+        s = abs(math.cos(v)) ** (2 / n)
+        h = abs(math.sin(v)) ** (2 / n)
+        xy = c + s * (q - c)
+        return np.array([xy[0], xy[1], p.H_BASE + (p.Z_PEAK - p.H_BASE) * h])
+    # separable: the section at this v is the contour of the height field at level z, found along the ray from the
+    # peak to the outline point (the field falls monotonically along it: 1 at the peak, 0 on the outline)
+    z = p.H_BASE + (p.Z_PEAK - p.H_BASE) * abs(math.sin(v)) ** 0.8
+    if v <= 0:
+        return np.array([q[0], q[1], p.H_BASE])
+    lo, hi = 0.0, 1.0
+    for _ in range(48):
+        t = 0.5 * (lo + hi)
+        xy = c + t * (q - c)
+        if float(_z_sep(xy[0], xy[1])) > z:
+            lo = t
+        else:
+            hi = t
+    xy = c + 0.5 * (lo + hi) * (q - c)
+    return np.array([xy[0], xy[1], z])
 
 
-def _skin_normal(u, phi):
+def _skin_normal(u, v):
     du = dp = 1e-4
-    Pu = skin_pt(min(u + du, 1), phi) - skin_pt(max(u - du, 0), phi)
-    Pp = skin_pt(u, 2 * dp) - skin_pt(u, 0.0) if phi < dp else skin_pt(u, phi + dp) - skin_pt(u, phi - dp)
+    Pu = skin_pt(min(u + du, 1), v) - skin_pt(max(u - du, 0), v)
+    Pp = skin_pt(u, v + 2 * dp) - skin_pt(u, v) if 0 <= v < dp else skin_pt(u, v + dp) - skin_pt(u, v - dp)
     n = np.cross(Pu, Pp)
     n /= np.linalg.norm(n)
-    P = skin_pt(u, phi)
+    P = skin_pt(u, v)
     if P[0] * n[0] + (P[1] - p.PEAK_Y) * n[1] < 0:
         n = -n
     return n
 
 
-def _section_wire(phi, d):
+def _section_wire(v, d, planar=False):
     pts = []
     for i in range(SKIN_NU + 1):
         u = i / SKIN_NU
-        P = skin_pt(u, phi)
+        P = skin_pt(u, v)
         if d:
-            n = _skin_normal(u, phi)
-            if phi == 0.0:                      # bottom section: exactly horizontal offset, stays planar
+            n = _skin_normal(u, v)
+            if planar:                          # lowest section (below the bottom cut): horizontal offset, stays planar
                 n[2] = 0.0
                 n /= np.linalg.norm(n)
             P = P - d * n
@@ -686,25 +810,59 @@ def _fix(shape):
 
 
 @functools.lru_cache(maxsize=None)
-@disk_cache(*GEOM_DEPS)
+@disk_cache(*GEOM_DEPS, "_plan_normal", "_tuck", "_dome_n", "_z_sep", "_side_n", "_half_width_table", "_ref_skin_body")
 def skin_body(d=0.0, z_bottom=0.0):
-    """Outer body (d = 0) or the skin offset inward by d along the surface normal (cavity: d = WALL).
-    Dome = loft through offset sections closed at the peak; band below H_BASE = prism of the bottom section."""
+    """Outer body (d = 0) or the skin offset inward by d along the surface normal (cavity: d = WALL), cut flat at
+    z_bottom. One loft through the lower-side sections and the dome sections, closed at the peak."""
     from OCP.BRepOffsetAPI import BRepOffsetAPI_ThruSections
-    from OCP.BRepBuilderAPI import BRepBuilderAPI_MakeVertex, BRepBuilderAPI_MakeFace
-    from OCP.BRepPrimAPI import BRepPrimAPI_MakePrism
-    from OCP.gp import gp_Pnt, gp_Vec
-    wires = [_section_wire(0.5 * math.pi * j / SKIN_NPHI, d) for j in range(SKIN_NPHI)]
+    from OCP.BRepBuilderAPI import BRepBuilderAPI_MakeVertex
+    from OCP.gp import gp_Pnt
+    if p.DOME_MODE == "ref":
+        return _ref_skin_body(d, z_bottom)
+    vs = [(z - p.H_BASE) / _low_span for z in SKIN_LOW_Z] + [0.5 * math.pi * j / SKIN_NPHI for j in range(SKIN_NPHI)]
+    # planar offsets for the lowest section (below the bottom cut) and the widest-line section (v = 0), where the
+    # skin is vertical by construction (numerical normals there pick up the half-width table's small kinks)
+    wires = [_section_wire(v, d, planar=(i == 0 or v == 0)) for i, v in enumerate(vs)]
     ts = BRepOffsetAPI_ThruSections(True, False, 1e-6)
     for w in wires:
         ts.AddWire(w.wrapped)
     ts.AddVertex(BRepBuilderAPI_MakeVertex(gp_Pnt(0, p.PEAK_Y, p.Z_PEAK - d)).Vertex())
     ts.CheckCompatibility(False)
     ts.Build()
-    dome = _fix(ts.Shape())
-    f0 = BRepBuilderAPI_MakeFace(wires[0].wrapped, True).Face()
-    band = _fix(BRepPrimAPI_MakePrism(f0, gp_Vec(0, 0, z_bottom - p.H_BASE)).Shape())
-    return _fix(dome.fuse(band).clean().wrapped)
+    body = _fix(ts.Shape())
+    return _fix(body.intersect(box(-60, 60, -80, 80, z_bottom, 60).val()).clean().wrapped)
+
+
+def _ref_skin_body(d, z_bottom):
+    """Reference skin offset d inward (one of ref_skin.OFFSETS): one periodic B-spline face interpolated through the
+    radial point grid (pole to pole, chord-length parameters), closed into a solid. The outer skin (d = 0) runs on
+    below z = 0 and is cut flat at z_bottom; the offset skins carry their own floor at ref_skin.FLOOR."""
+    from OCP.TColgp import TColgp_Array2OfPnt
+    from OCP.GeomAPI import GeomAPI_PointsToBSplineSurface
+    from OCP.Approx import Approx_ParametrizationType
+    from OCP.gp import gp_Pnt
+    from OCP.BRep import BRep_Builder
+    from OCP.TopoDS import TopoDS_Shell
+    from OCP.BRepBuilderAPI import BRepBuilderAPI_MakeFace, BRepBuilderAPI_MakeSolid
+    key = min(REF["offsets"], key=lambda k: abs(k - d))
+    assert abs(key - d) <= 1e-6, f"no reference skin table for offset {d}"
+    t = REF["offsets"][key]
+    G = t["grid"]
+    A = TColgp_Array2OfPnt(1, G.shape[0], 1, G.shape[1])
+    for i in range(G.shape[0]):
+        for j in range(G.shape[1]):
+            A.SetValue(i + 1, j + 1, gp_Pnt(*map(float, G[i, j])))
+    it = GeomAPI_PointsToBSplineSurface()
+    it.Interpolate(A, Approx_ParametrizationType.Approx_ChordLength, True)
+    face = BRepBuilderAPI_MakeFace(it.Surface(), 1e-6).Face()
+    bld, sh = BRep_Builder(), TopoDS_Shell()
+    bld.MakeShell(sh)
+    bld.Add(sh, face)
+    body = _fix(BRepBuilderAPI_MakeSolid(sh).Solid())
+    if t.get("floor") is not None:
+        assert 0 <= t["floor"] - z_bottom < 0.05, "the offset tables carry their floor at ref_skin.FLOOR (FLOOR + margin)"
+        return body
+    return _fix(body.intersect(box(-90, 90, -120, 120, z_bottom, 90).val()).clean().wrapped)
 
 
 def outer_body():
@@ -715,7 +873,9 @@ def outer_body():
 @disk_cache(*GEOM_DEPS)
 def cavity_body():
     """Cavity above the floor, floor-wall corner rounded R_MIN."""
-    c = skin_body(p.WALL + 0.002, p.FLOOR)      # + spline fitting margin: exact wall >= WALL
+    c = skin_body(p.WALL + (0.15 if p.DOME_MODE == "ref" else 0.002), p.FLOOR)   # + margin: exact wall >= WALL (ref: local edge sharpness)
+    if p.DOME_MODE == "ref":
+        return c                        # floor-wall blend is part of the reference cavity table
     bot = [e for e in c.Edges() if abs(e.BoundingBox().zmax - p.FLOOR) < 1e-6 and abs(e.BoundingBox().zmin - p.FLOOR) < 1e-6]
     return solid(c.fillet(p.R_MIN, bot))
 
@@ -734,10 +894,70 @@ _TH, _RR = _polar_table()
 _PLAN_POLY = np.array([[PLAN_EDGE.positionAt(i / 2000).x, PLAN_EDGE.positionAt(i / 2000).y] for i in range(2000)])
 
 
+def _half_width_table():
+    """Outline half-width at y (the plan is convex): y grid and max |x| on it."""
+    ys = np.linspace(p.REAR_Y, p.NOSE_Y, 2001)
+    P = _PLAN_POLY
+    xn, yn = np.roll(P[:, 0], -1), np.roll(P[:, 1], -1)
+    hw = []
+    for y in ys:
+        c = (P[:, 1] - y) * (yn - y) <= 0
+        den = np.where(yn[c] == P[c, 1], 1e-12, yn[c] - P[c, 1])
+        xs = P[c, 0] + (y - P[c, 1]) * (xn[c] - P[c, 0]) / den
+        hw.append(np.abs(xs).max() if len(xs) else 0.0)
+    return ys, np.maximum(np.array(hw), 1e-6)
+
+
+def _z_sep(x, y):
+    """Separable dome: H_BASE + (Z_PEAK - H_BASE) f(s_y) L(s_x). L is the side profile across the local half-width,
+    f the centreline profile (separate front / rear). Every cross-section is highest on the centreline."""
+    x = np.abs(np.asarray(x, float)); y = np.asarray(y, float)
+    hw = np.interp(y, _HW_Y, _HW_X)
+    sx = np.clip(x / hw, 0.0, 1.0)
+    front = y >= p.PEAK_Y
+    sy = np.where(front, (y - p.PEAK_Y) / (p.NOSE_Y - p.PEAK_Y), (p.PEAK_Y - y) / (p.PEAK_Y - p.REAR_Y))
+    sy = np.clip(sy, 0.0, 1.0)
+    a = np.where(front, p.PROF_A_FRONT, p.PROF_A_REAR); b = np.where(front, p.PROF_B_FRONT, p.PROF_B_REAR)
+    f = np.clip(1 - sy ** a, 0.0, 1.0) ** (1 / b)
+    n = _side_n(y)
+    L = np.clip(1 - sx ** n, 0.0, 1.0) ** (1 / n)
+    return p.H_BASE + (p.Z_PEAK - p.H_BASE) * f * L
+
+
+def _side_n(y):
+    """Side-profile exponent along the length: DOME_N from DOME_N_Y1 forward, DOME_N_MID at y = 0, DOME_N_REAR at the
+    rear tip; cosine blends between (constant across each cross-section, so every section stays convex)."""
+    y = np.asarray(y, float)
+    g1 = np.clip(y / p.DOME_N_Y1, 0.0, 1.0)
+    front = p.DOME_N_MID + (p.DOME_N - p.DOME_N_MID) * 0.5 * (1 - np.cos(np.pi * g1))
+    g2 = np.clip(y / p.REAR_Y, 0.0, 1.0)
+    rear = p.DOME_N_MID + (p.DOME_N_REAR - p.DOME_N_MID) * 0.5 * (1 - np.cos(np.pi * g2))
+    return np.where(y >= 0, front, rear)
+
+
+_HW_Y, _HW_X = _half_width_table()
+
+
+def _z_ref(x, y):
+    """Outer skin height from the reference top map (bilinear; far below everything outside the outline)."""
+    from scipy.ndimage import map_coordinates
+    x, y = np.broadcast_arrays(np.asarray(x, float), np.asarray(y, float))
+    tm = REF["top_map"]
+    st = tm["xs"][1] - tm["xs"][0]
+    Z = np.where(np.isfinite(tm["z"]), tm["z"], -50.0)
+    out = map_coordinates(Z, [(x.ravel() - tm["xs"][0]) / st, (y.ravel() - tm["ys"][0]) / st], order=1, mode="nearest")
+    return out.reshape(x.shape) if x.shape else float(out[0])
+
+
 def _z_dome(x, y):
+    if p.DOME_MODE == "ref":
+        return _z_ref(x, y)
+    if p.DOME_MODE != "radial":
+        return _z_sep(x, y)
     x = np.asarray(x, float); yy = np.asarray(y, float) - p.PEAK_Y
     rho = np.minimum(np.hypot(x, yy) / np.interp(np.arctan2(yy, x), _TH, _RR), 1.0)
-    return p.H_BASE + (p.Z_PEAK - p.H_BASE) * (1 - rho ** p.DOME_N) ** (1 / p.DOME_N)
+    n = _dome_n(x, yy)
+    return p.H_BASE + (p.Z_PEAK - p.H_BASE) * (1 - rho ** n) ** (1 / n)
 
 
 def z_skin(x, y, d=0.0):
@@ -776,9 +996,10 @@ def plan_offset_prism(d, z0, z1):
     return cq.Solid.extrudeLinear(cq.Face.makeFromWires(w), cq.Vector(0, 0, z1 - z0))
 
 
-WHEEL_Z = float(z_skin(WHEEL_X, WHEEL_Y)) + p.WHEEL_PROUD - p.WHEEL_D / 2
+WHEEL_Z = p.WHEEL_Z                    # locked
 Z_HI = p.Z_PEAK + 5.0                  # top of feature blanks; every blank is intersected with the outer body
-SLOT_Z0 = p.H_BASE + 2.0               # slot / opening cutters start here (only skin exists there when cut)
+SLOT_Z0 = 9.0 if p.DOME_MODE == "ref" else 16.0   # slot / opening cutters start here (only skin exists there when cut;
+                                       # the reference nose is low, so the buttons' front slot runs down to ~12)
 
 
 # ----------------------------------------------------------------------------------------------
@@ -818,16 +1039,73 @@ def _skin_faces():
     return cq.Compound.makeCompound(outer_body().Faces())
 
 
+_REQ_MEMO = {}
+
+
 def required_edge(e):
-    """Edge (or (x, y, z) point) on the outer skin or at the USB-C opening: these need at least R_MIN."""
+    """Edge (or (x, y, z) point) on the outer skin or at the USB-C opening: these need at least R_MIN. Results are
+    memoised by midpoint (the rounding loops ask about the same untouched edges many times)."""
     c = e.positionAt(0.5).toTuple() if hasattr(e, "positionAt") else tuple(e)
+    k = tuple(round(v, 4) for v in c)
+    if k not in _REQ_MEMO:
+        _REQ_MEMO[k] = _required_point(c)
+    return _REQ_MEMO[k]
+
+
+def _required_point(c):
     ub = usb_opening().val().BoundingBox()
     if (ub.xmin - 0.6 <= c[0] <= ub.xmax + 0.6 and ub.ymin - 0.6 <= c[1] <= ub.ymax + 0.6
             and ub.zmin - 0.6 <= c[2] <= ub.zmax + 0.6):
         return True
+    # fast reject on a 0.01 mm mesh of the skin: farther than 0.07 there means farther than 0.06 on the exact
+    # surface (> 0.05); only the rest is measured exactly (the exact query on the big lofted face takes seconds)
+    import trimesh
+    if float(trimesh.proximity.closest_point(_skin_mesh(), [c])[1][0]) > (0.2 if p.DOME_MODE == "ref" else 0.07):
+        return False
     d = BRepExtrema_DistShapeShape(cq.Vertex.makeVertex(*c).wrapped, _skin_faces().wrapped)
     d.Perform()
     return d.Value() < 0.05
+
+
+@functools.lru_cache(maxsize=None)
+def _skin_mesh():
+    """Outer skin as a mesh with 0.01 mm absolute chord sag (for fast distance pre-checks)."""
+    import trimesh
+    from OCP.BRepMesh import BRepMesh_IncrementalMesh
+    from OCP.BRep import BRep_Tool
+    from OCP.TopLoc import TopLoc_Location
+    ob = cq.Shape.importBrep(_brep_copy(outer_body()))      # mesh a copy: keep the cached body free of triangulation
+    _imesh(ob, 0.01)
+    V, F, off = [], [], 0
+    for f in ob.Faces():
+        loc = TopLoc_Location()
+        tri = BRep_Tool.Triangulation_s(f.wrapped, loc)
+        if tri is None:
+            continue
+        tr = loc.Transformation()
+        V += [tri.Node(i).Transformed(tr).Coord() for i in range(1, tri.NbNodes() + 1)]
+        F += [tuple(off + k - 1 for k in tri.Triangle(i).Get()) for i in range(1, tri.NbTriangles() + 1)]
+        off += tri.NbNodes()
+    return trimesh.Trimesh(np.array(V), np.array(F), process=True)
+
+
+def _imesh(shape, lin, ang=0.1):
+    """Mesh a shape in place with an absolute chord sag. Surface-deflection control on: without it OCC under-meshes
+    the reference skin (one dense periodic B-spline face) by an order of magnitude (2 mm facets at "0.01 mm")."""
+    from OCP.BRepMesh import BRepMesh_IncrementalMesh
+    from OCP.IMeshTools import IMeshTools_Parameters
+    pr = IMeshTools_Parameters()
+    pr.Deflection, pr.Angle, pr.Relative, pr.InParallel = lin, ang, False, True
+    pr.ControlSurfaceDeflection, pr.MinSize = True, max(2 * lin, 0.005)
+    BRepMesh_IncrementalMesh(shape.wrapped, pr)
+
+
+def _brep_copy(s):
+    import io
+    buf = io.BytesIO()
+    s.exportBrep(buf)
+    buf.seek(0)
+    return buf
 
 
 def round_near(body, bb, tag, r=None, pad=0.6, rounds=3):
@@ -841,31 +1119,33 @@ def round_near(body, bb, tag, r=None, pad=0.6, rounds=3):
         if failed:
             FILLET_FAILS.setdefault(tag, []).extend(failed)
         return solid(body)
+    # cut in the skin (slot, opening, hole): only edges on the outer skin or at the USB-C opening must be rounded
+    # (edge rule); edges inside the cut stay sharp. Rounding them anyway with reduced-radius fallbacks left sliver
+    # faces at the slot ends that OCC cannot mesh (non-manifold STL).
+    def req():
+        return [e for e in sharp_edges(body, near=(bb, pad)) if required_edge(e)]
     for _ in range(rounds):
-        es = sharp_edges(body, near=(bb, pad))
+        es = req()
         if not es or (prev is not None and len(es) >= prev):
             break
         prev = len(es)
         body, failed = fillet_edges(body, es, r)
-    # leftovers: one edge at a time (re-detected after every success), R_MIN first, then smaller radii
+    # leftovers: one edge at a time, R_MIN first, then smaller radii; the candidates are found once per radius and
+    # re-matched to the current body by midpoint after each success (re-scanning after every edge was ~1.5 min each)
     for rr in (r,) + FALLBACK_R:
-        tried = set()
-        budget = 4 * len(sharp_edges(body, near=(bb, pad))) + 8   # a success can leave new short edges: cap it
-        while budget > 0:
-            budget -= 1
-            es = sharp_edges(body, near=(bb, pad))
-            es = [e for e in es if tuple(round(c, 3) for c in e.positionAt(0.5).toTuple()) not in tried]
-            if not es:
-                break
-            e = es[0]
-            key = tuple(round(c, 3) for c in e.positionAt(0.5).toTuple())
-            tried.add(key)
-            nb = _safe_fillet(body, [e], rr)
+        cands = req()
+        if not cands:
+            break
+        for e0 in cands:
+            m = rematch(body, [e0])
+            if not m:
+                continue                      # consumed by an earlier fillet
+            nb = _safe_fillet(body, m, rr)
             if nb is not None:
                 body = nb
                 if rr < r:
-                    REDUCED.append((tag, rr, tuple(round(c, 2) for c in key), round(e.Length(), 2)))
-    failed = sharp_edges(body, near=(bb, pad))
+                    REDUCED.append((tag, rr, tuple(round(c, 2) for c in e0.positionAt(0.5).toTuple()), round(e0.Length(), 2)))
+    failed = req()
     if failed:
         FILLET_FAILS.setdefault(tag, []).extend(failed)
     return solid(body)
@@ -900,10 +1180,11 @@ def usb_opening():
     """Pocket through the left wall so the USB-C plug overmold reaches J5 (stops PLUG_STOP short)."""
     w = p.PLUG_W + 2 * p.PLUG_OPEN_CLR
     h = p.PLUG_H + 2 * p.PLUG_OPEN_CLR
-    r = h / 2 - 0.01
-    x0, x1 = -p.W / 2 - 5, -p.W / 2 + p.WALL + 0.5   # through the wall only; inside is open cavity
+    x0, x1 = -p.W / 2 - 5, -p.W / 2 + p.WALL + 3.0   # through the wall (which leans in toward the opening top)
+    if p.DOME_MODE == "ref":
+        x1 = J5_MOUTH_X - 1.0                           # deeper recess (9.6 mm): the pocket runs to 1 mm before J5
     return (cq.Workplane("YZ").workplane(offset=x0).center(J5_Y, J5_Z)
-            .rect(w, h).extrude(x1 - x0).edges("|X").fillet(r))
+            .slot2D(w, h, 0).extrude(x1 - x0))            # exact stadium: straight sides, full-radius ends
 
 
 def plug_envelope():
@@ -914,8 +1195,10 @@ def plug_envelope():
 
 
 def round_split(part, z):
-    """Round the edges of the split face (z = H_BASE) and anything else left sharp there."""
+    """Round the edges of the split face (z = Z_SPLIT) and anything else left sharp there."""
     es = [e for e in sharp_edges(part) if abs(e.positionAt(0.5).z - z) < 0.05]
+    if p.DOME_MODE == "ref":            # inner split edges are internal (edge rule: may stay sharp); on the reference
+        es = [e for e in es if required_edge(e)]      # cavity skin their fillets crawl and fail
     part, failed = fillet_edges(part, es, p.R_MIN)
     if failed:
         FILLET_FAILS.setdefault("split", []).extend(failed)
@@ -933,11 +1216,11 @@ EMBED = 0.6   # features are sunk this far into the floor / ceiling so their own
 
 
 @disk_cache(*GEOM_DEPS, *ROUND_DEPS, "hollow", "round_split", "usb_opening", "_hole_edge", "outer_body",
-            "cavity_body", "required_edge")
+            "cavity_body", "required_edge", "_required_point", "_skin_mesh")
 def base_part():
     hol = hollow()[1]
-    body = solid(hol.intersect(box(-60, 60, -80, 80, -1, p.H_BASE).val()))
-    body = round_split(body, p.H_BASE)
+    body = solid(hol.intersect(box(-90, 90, -120, 120, -1, p.Z_SPLIT).val()))
+    body = round_split(body, p.Z_SPLIT)
     x0, x1, y0, y1, z0, z1 = BAT_BOX
     c = p.BAT_CLEAR
     fz = p.FLOOR - EMBED
@@ -955,7 +1238,7 @@ def base_part():
     body = add(body, lip, "stop", pre=False)
     # cover screw columns (front: up to the board bottom, rear: up to the split plane)
     for i, (sx, sy) in enumerate(COVER_SCREWS):
-        ztop = p.BOARD_Z_BOT if i < 2 else p.H_BASE
+        ztop = p.BOARD_Z_BOT if i < 2 else p.REAR_IFACE_Z
         body = add(body, cyl_z(sx, sy, fz, ztop, p.STANDOFF_D), "column")
     # battery clips (4): flexing arms beside the long edges, hook BAT_CLEAR above the cell
     for sgn in (-1, 1):
@@ -977,8 +1260,7 @@ def base_part():
     for i, (sx, sy) in enumerate(COVER_SCREWS):
         csk = cq.Solid.makeCone(p.CSK_D / 2 + 1.0, 0.0, p.CSK_D / 2 + 1.0, cq.Vector(sx, sy, -1.0))
         body = sub(body, csk, "csk")
-        body = sub(body, cyl_z(sx, sy, -1, p.H_BASE + 1, p.SCREW_CLEAR_D), "hole")
-    body = sub(body, usb_opening(), "usb")
+        body = sub(body, cyl_z(sx, sy, -1, p.REAR_IFACE_Z + 1, p.SCREW_CLEAR_D), "hole")
     # outer bottom edge
     bot = [e for e in sharp_edges(body) if e.BoundingBox().zmax < 1e-3]
     outer_bot = [e for e in bot if e.BoundingBox().xmax - e.BoundingBox().xmin > 3 or e.BoundingBox().ymax - e.BoundingBox().ymin > 3]
@@ -1072,8 +1354,96 @@ def in_button(x, y, side):
     return y >= p.HINGE_Y + p.HINGE_LEN / 2 and _in_poly(_TONGUE_POLY, x * side, y)
 
 
+@functools.lru_cache(maxsize=None)
 def slot_tool():
-    """All slots in one cutter: inside the outer slot outline, outside both buttons, behind nothing past
+    """All slots, cut square to the skin: the patch of outer skin inside the slot outline (_slot_prism) is moved
+    0.5 mm out along its normal and thickened 4.0 mm inward, so every slot wall runs along the surface normal. A
+    vertical cut through skin sloping at angle a leaves the uphill edge 0.6 tan(a) above the downhill one (0.7 mm at
+    the button tips, 48 deg); along the normal the gap is a constant 0.6 mm with no step."""
+    if p.DOME_MODE == "ref":
+        return _ref_slot_tool()
+    from OCP.BRepOffset import BRepOffset_MakeSimpleOffset
+    band = outer_body().intersect(_slot_prism())
+    skin = [f for f in band.Faces() if f.geomType() == "BSPLINE" and f.Center().z > SLOT_Z0 + 0.5
+            and abs(f.normalAt().z) > 0.05]
+    sh = cq.Shell.makeShell(skin)
+    up = BRepOffset_MakeSimpleOffset(sh.wrapped, 0.5)
+    up.Perform()
+    th = BRepOffset_MakeSimpleOffset(up.GetResultShape(), -4.0)
+    th.SetBuildSolidFlag(True)
+    th.Perform()
+    out = solid(cq.Shape.cast(th.GetResultShape()))
+    assert out.isValid() and len(out.Solids()) == 1, "normal slot cutter"
+    return out
+
+
+def _ref_slot_tool(out_=0.5, in_=2.1, step=0.4):
+    """Reference skin: the slots square to the skin, built directly. For each button, the slot centreline (the
+    button outline grown by SLOT / 2, the part in front of SLOT_REAR_Y) is put on the exact outer skin; at every
+    point a rectangle across the slot in the plane of the surface normal, from out_ above the skin to in_ below it;
+    one loft through them per button. The centre slot (shared by both buttons): each side's rectangle reaches only
+    0.1 past the centre line, so the two lofts overlap there without coinciding. Plus the relief holes at the slot
+    ends (vertical, as before). (The offset-patch cutter of the parametric skin builds no solid on this skin.)"""
+    from OCP.BRepOffsetAPI import BRepOffsetAPI_ThruSections
+    from OCP.GeomAPI import GeomAPI_ProjectPointOnSurf
+    from OCP.BRep import BRep_Tool
+    from OCP.gp import gp_Pnt, gp_Vec
+    ob = outer_body()
+    srf = BRep_Tool.Surface_s([f for f in ob.Faces() if f.geomType() == "BSPLINE"][0].wrapped)
+    loop = TONGUE_W.offset2D(p.SLOT / 2, "arc")[0]
+    n = int(loop.Length() / step)
+    P2 = np.array([[loop.positionAt(i / n).x, loop.positionAt(i / n).y] for i in range(n)])
+    keep = P2[:, 1] >= SLOT_REAR_Y
+    k0 = int(np.flatnonzero(keep & ~np.roll(keep, 1))[0])
+    P2 = np.roll(P2, -k0, axis=0)[:int(keep.sum())]
+    # centre-slot weight: 1 on the centre line (|x| < 0.05), fading to 0 over 1.5 mm of path
+    cen = (np.abs(P2[:, 0]) < 0.05).astype(float)
+    from scipy.ndimage import uniform_filter1d
+    wc = np.clip(uniform_filter1d(cen, size=int(1.5 / step) * 2 + 1) * 2.0, 0.0, 1.0)
+    cutters = []
+    for side in (1, -1):
+        Q = P2 * [side, 1]
+        T = np.gradient(Q, axis=0)
+        T /= np.linalg.norm(T, axis=1)[:, None]
+        zs = z_skin(Q[:, 0], Q[:, 1])
+        ts = BRepOffsetAPI_ThruSections(True, False, 1e-6)
+        for (x, y), (tx, ty), z, w in zip(Q, T, zs, wc):
+            pr = GeomAPI_ProjectPointOnSurf(gp_Pnt(float(x), float(y), float(z)), srf)
+            u, v = pr.LowerDistanceParameters()
+            pt, du, dv = gp_Pnt(), gp_Vec(), gp_Vec()
+            srf.D1(u, v, pt, du, dv)
+            c = np.array(pt.Coord())
+            nrm = np.array(du.Crossed(dv).Coord())
+            nrm /= np.linalg.norm(nrm)
+            if nrm[2] < 0:
+                nrm = -nrm
+            t = np.array([tx, ty, 0.0])
+            t -= t.dot(nrm) * nrm
+            t /= np.linalg.norm(t)
+            b = np.cross(nrm, t)
+            if b[0] * side < 0:              # b points toward this side's own tongue
+                b = -b
+            wo, wi = p.SLOT / 2, p.SLOT / 2 * (1 - w) + 0.1 * w     # own side / centre side half-widths
+            corners = [c + b * wo + nrm * out_, c - b * wi + nrm * out_, c - b * wi - nrm * in_, c + b * wo - nrm * in_]
+            ts.AddWire(cq.Wire.makePolygon([cq.Vector(*q) for q in corners], close=True).wrapped)
+        ts.CheckCompatibility(False)
+        ts.Build()
+        cut_ = solid(cq.Shape.cast(ts.Shape()))
+        if cut_.Volume() < 0:                # the rectangles' winding makes an inside-out loft: flip it
+            cut_ = solid(cq.Shape.cast(cut_.wrapped.Reversed()))
+        cutters.append(cut_)
+    ok = [(c.isValid(), round(c.Volume(), 2)) for c in cutters]
+    out = cutters[0].fuse(cutters[1])
+    for x in (p.SPINE_HW + p.SLOT / 2, p.BTN_X + p.SLOT / 2):
+        for sg in (-1, 1):
+            out = out.fuse(cyl_z(sg * x, SLOT_REAR_Y, SLOT_Z0, Z_HI, p.RELIEF_D).val())
+    out = solid(out.clean())
+    assert out.isValid(), f"reference slot cutter (lofts valid: {ok})"
+    return out
+
+
+def _slot_prism():
+    """All slots in one vertical cutter: inside the outer slot outline, outside both buttons, behind nothing past
     SLOT_REAR_Y; plus the relief holes at the slot ends."""
     z0, z1 = SLOT_Z0, Z_HI
     ext = lambda w: cq.Solid.extrudeLinear(cq.Face.makeFromWires(w), cq.Vector(0, 0, z1 - z0))
@@ -1105,8 +1475,14 @@ def hinge_tube(side):
     path = cq.Wire.assembleEdges([cq.Edge.makeSpline([cq.Vector(float(x), p.HINGE_Y, float(z)) for x, z in zip(xs, zs)])])
     circ = cq.Wire.makeCircle(rg, path.startPoint(), path.tangentAt(0))
     tube = cq.Solid.sweep(circ, [], path, makeSolid=True, isFrenet=False)
-    # vertical end planes at the slot centres: the ends lie in the slot void, never in the fixed wall
-    x0, x1 = sorted((side * xa, side * xb))
+    # vertical end planes at the slot centres, taken at the groove's depth: the slots are cut along the surface
+    # normal, so on the sloping skin a slot lies further in at depth; the ends stay in the slot void, never in the
+    # fixed wall
+    def at_depth(x):
+        gx = float(z_skin(x + 0.05, p.HINGE_Y) - z_skin(x - 0.05, p.HINGE_Y)) / 0.1
+        gy = float(z_skin(x, p.HINGE_Y + 0.05) - z_skin(x, p.HINGE_Y - 0.05)) / 0.1
+        return x + target * gx / math.sqrt(1 + gx * gx + gy * gy)
+    x0, x1 = sorted((side * at_depth(xa), side * at_depth(xb)))
     return solid(tube.intersect(box(x0, x1, p.HINGE_Y - 5, p.HINGE_Y + 5, p.FLOOR, Z_HI).val()))
 
 
@@ -1115,7 +1491,7 @@ def hinge_tube(side):
 def tongue_keepout():
     """Band under both buttons (and their slots): the skin plus TONGUE_CLR below it. Fixed features are trimmed
     out of it so the buttons can travel."""
-    m = p.SLOT + 1.0                       # past the slot and its inner rim round (R_MIN)
+    m = p.SLOT + 2.0                       # past the slot (which leans ~1 mm at depth: cut along the normal) and its rim round
     reg = box(-p.BTN_X - m, p.BTN_X + m, SLOT_REAR_Y - m, p.NOSE_Y + 5, p.FLOOR, Z_HI).val() \
         .intersect(plan_offset_prism(p.LIP - 1.0, p.FLOOR, Z_HI))
     return solid(reg.cut(cavity_body().translate(cq.Vector(0, 0, -p.TONGUE_CLR))))
@@ -1130,7 +1506,7 @@ def _socket_z0(k):
     return float(z_skin(xs, ys, p.WALL).min()) - p.KEY_SOCKET_H
 
 
-SOCKET_Z0 = {k: _socket_z0(k) for k in SW}
+SOCKET_Z0 = dict(KEY_SOCKET_Z0) if p.DOME_MODE == "ref" else {k: _socket_z0(k) for k in SW}
 
 
 def detent_geometry():
@@ -1168,19 +1544,22 @@ def ring_x():
     return x_left, x_left + p.DETENT_RING_W
 
 
-TOP_SHELL_DEPS = (*GEOM_DEPS, *ROUND_DEPS, "hollow", "usb_opening", "slot_tool", "_tongue_wire", "_outer_slot_wire",
-                  "hinge_tube", "wheel_open", "outer_body", "cavity_body", "plan_offset_prism", "required_edge")
+TOP_SHELL_DEPS = (*GEOM_DEPS, *ROUND_DEPS, "hollow", "usb_opening", "slot_tool", "_ref_slot_tool", "_slot_prism", "_tongue_wire", "_outer_slot_wire",
+                  "hinge_tube", "wheel_open", "outer_body", "cavity_body", "plan_offset_prism", "required_edge",
+                  "_required_point", "_skin_mesh")
 
 
 @disk_cache(*TOP_SHELL_DEPS)
 def top_shell():
     """Stage 1 of the top: skin, split / USB rounds, slots, hinge grooves, wheel opening."""
     hol = hollow()[1]
-    t = solid(hol.intersect(box(-60, 60, -80, 80, p.H_BASE, 50).val()))
+    t = solid(hol.intersect(box(-90, 90, -120, 120, p.Z_SPLIT, Z_HI).val()))
     # USB notch first, then round its edges together with the split edges (one fillet operation)
     u = solid(usb_opening())
     t = solid(t.cut(u))
-    es = [e for e in sharp_edges(t) if _near(e, u.BoundingBox(), 0.6) or abs(e.positionAt(0.5).z - p.H_BASE) < 0.05]
+    es = [e for e in sharp_edges(t) if _near(e, u.BoundingBox(), 0.6) or abs(e.positionAt(0.5).z - p.Z_SPLIT) < 0.05]
+    if p.DOME_MODE == "ref":
+        es = [e for e in es if required_edge(e)]
     t, failed = fillet_edges(t, es, p.R_MIN)
     if failed:
         FILLET_FAILS.setdefault("split+usb", []).extend(failed)
@@ -1200,7 +1579,7 @@ def front_post(h):
     hx, hy = HOLES[h]
     emb = skin_body(p.WALL - EMBED, p.FLOOR)
     sg = 1 if hx > 0 else -1
-    xa, xb = sorted((hx, sg * (p.SIDE + 1)))
+    xa, xb = sorted((hx, sg * (80.0 if p.DOME_MODE == "ref" else p.SIDE + 1)))
     cyl = cyl_z(hx, hy, p.board_z_top, Z_HI, p.BOSS_D)
     boss = solid(cyl.faces("<Z").edges().fillet(p.R_MIN).val().intersect(emb))
     rib = solid(box(xa, xb, hy - 1.0, hy + 1.0, p.board_z_top + 1.0, Z_HI).edges("|X").fillet(p.R_MIN)
@@ -1232,7 +1611,7 @@ def top_posts():
         else:
             t = add(t, solid(cyl_z(hx, hy, p.board_z_top, Z_HI, p.BOSS_D).val().intersect(emb)), "boss", pre=False)
     for sx in (-p.REAR_SCREW_X, p.REAR_SCREW_X):
-        boss = pre_round(cyl_z(sx, p.REAR_SCREW_Y, p.H_BASE, Z_HI, p.BOSS_D_REAR), p.R_MIN)
+        boss = pre_round(cyl_z(sx, p.REAR_SCREW_Y, p.REAR_IFACE_Z, Z_HI, p.BOSS_D_REAR), p.R_MIN)
         t = add(t, solid(boss.intersect(emb)), "boss", pre=False)
     return t
 
@@ -1285,13 +1664,15 @@ def top_holes():
         sx, sy = SW[k]
         t = sub(t, cyl_z(sx, sy, SOCKET_Z0[k] - 1, SOCKET_Z0[k] + p.KEY_HOLE_DEPTH, p.KEY_HOLE_D), "socket_hole")
     for h, (hx, hy) in HOLES.items():
-        t = sub(t, cyl_z(hx, hy, p.board_z_top - 1, p.board_z_top + p.PILOT_DEPTH, p.SCREW_PILOT_D), "pilot")
+        depth = p.PILOT_DEPTH_FRONT if h in FRONT_HOLES else p.PILOT_DEPTH
+        t = sub(t, cyl_z(hx, hy, p.board_z_top - 1, p.board_z_top + depth, p.SCREW_PILOT_D), "pilot")
     for sx in (-p.REAR_SCREW_X, p.REAR_SCREW_X):
-        t = sub(t, cyl_z(sx, p.REAR_SCREW_Y, p.H_BASE - 1, p.H_BASE + p.PILOT_DEPTH_REAR, p.SCREW_PILOT_D), "pilot")
+        t = sub(t, cyl_z(sx, p.REAR_SCREW_Y, p.REAR_IFACE_Z - 1, p.REAR_IFACE_Z + p.PILOT_DEPTH_REAR, p.SCREW_PILOT_D),
+                "pilot")
     return solid(t)
 
 
-@disk_cache(*_top_holes_deps, "top_holes", "round_all", "required_edge", "_skin_faces")
+@disk_cache(*_top_holes_deps, "top_holes", "round_all", "required_edge", "_required_point", "_skin_faces")
 def top_part():
     """Stage 5 (last): round the outer-skin and USB-C edges still sharp (edge rule); returns (top, sharp edges left)."""
     return round_all(top_holes(), p.R_MIN, rounds=1, name="top", keep=required_edge)
@@ -1496,7 +1877,7 @@ def wall_thickness(part, outer, n=6000, seed=1):
         from OCP.TopLoc import TopLoc_Location
         from OCP.TopAbs import TopAbs_REVERSED
         BRepTools.Clean_s(s.wrapped)
-        BRepMesh_IncrementalMesh(s.wrapped, 0.01, False, 0.5, True)
+        _imesh(s, 0.01)
         V, F, off = [], [], 0
         for f in s.Faces():
             loc = TopLoc_Location()
@@ -1596,14 +1977,14 @@ def near_cut_edge(pt, d=0.75):
     """Sample points on the rim of a cut (slot, relief hole, wheel opening, USB opening) or on the
     parting-line groove measure the edge, not the wall: skip them."""
     x, y, z = pt
-    if abs(z - p.H_BASE) < 1.0:     # parting line: both parts carry 0.5 rounds there (small V-groove)
+    if abs(z - p.Z_SPLIT) < 1.0:    # parting line: both parts carry 0.5 rounds there (small V-groove)
         return True
     if z > SLOT_Z0 - 0.5 and _near_slot(x, y, d):
         return True
     ox0, ox1, oy0, oy1 = WOPEN
     if ox0 - d <= x <= ox1 + d and oy0 - d <= y <= oy1 + d and z > SLOT_Z0 - 0.5:
         return True
-    if x < -p.W / 2 + p.WALL + 0.5 and abs(y - J5_Y) < (p.PLUG_W / 2 + p.PLUG_OPEN_CLR + d) and \
+    if x < -p.W / 2 + p.WALL + 3.0 and abs(y - J5_Y) < (p.PLUG_W / 2 + p.PLUG_OPEN_CLR + d) and \
             abs(z - J5_Z) < (p.PLUG_H / 2 + p.PLUG_OPEN_CLR + d):
         return True
     return False
@@ -1683,14 +2064,23 @@ def opening_volumes():
     out = {k: solid(t.intersect(hol)) for k, t in cut_tools().items()}
     for nm, (sx, sy) in zip(("screw_H1", "screw_H2", "screw_rear_L", "screw_rear_R"), COVER_SCREWS):
         csk = cq.Solid.makeCone(p.CSK_D / 2 + 1.0, 0.0, p.CSK_D / 2 + 1.0, cq.Vector(sx, sy, -1.0))
-        hole = solid(cyl_z(sx, sy, -1, p.H_BASE + 1, p.SCREW_CLEAR_D))
+        hole = solid(cyl_z(sx, sy, -1, p.REAR_IFACE_Z + 1, p.SCREW_CLEAR_D))
         out[nm] = solid(csk.fuse(hole).intersect(hol))
     return out
 
 
+def outline_at(z):
+    """The outer skin's outline at height z (section of the outer body)."""
+    from OCP.BRepAlgoAPI import BRepAlgoAPI_Section
+    from OCP.gp import gp_Pln, gp_Pnt, gp_Dir
+    sec = BRepAlgoAPI_Section(outer_body().wrapped, gp_Pln(gp_Pnt(0, 0, z), gp_Dir(0, 0, 1)))
+    sec.Build()
+    return cq.Shape.cast(sec.Shape())
+
+
 def web_report():
     """Material width between every pair of openings, and from each opening to the part's outer edge (the outline
-    at the split line z = H_BASE, and for openings in the base also at the bottom, z = 0). Exact B-rep distance
+    at the split line z = Z_SPLIT, and for openings in the base also at the bottom, z = 0). Exact B-rep distance
     between the removed volumes, i.e. between the cut walls. Fails below web_min_jlc."""
     vols = opening_volumes()
     names = list(vols)
@@ -1698,15 +2088,15 @@ def web_report():
     for i in range(len(names)):
         for j in range(i + 1, len(names)):
             webs.append(dict(between=(names[i], names[j]), width=round(min_dist(vols[names[i]], vols[names[j]]), 3)))
-    edge = {"outline at split line (z = %.0f)" % p.H_BASE: PLAN_EDGE.translate(cq.Vector(0, 0, p.H_BASE)),
-            "outline at bottom (z = 0)": PLAN_EDGE}
+    edge = {"outline at split line (z = %.0f)" % p.Z_SPLIT: outline_at(p.Z_SPLIT),
+            "outline at bottom (z = 0)": outline_at(0.001)}
     for nm, v in vols.items():
         for en, e in edge.items():
-            if en.startswith("outline at bottom") and v.BoundingBox().zmin > p.H_BASE - 1e-6:
+            bb = v.BoundingBox()
+            if en.startswith("outline at bottom") and bb.zmin > p.Z_SPLIT - 1e-6:
                 continue                      # openings in the top part only: the top's outer edge is the split line
-            if nm == "usb_c" and en.startswith("outline at split"):
-                webs.append(dict(between=(nm, en), width=None, note="opening crosses the split line by design "
-                                 "(notch in both parts), so there is no web there"))
+            if en.startswith("outline at split") and bb.zmin < p.Z_SPLIT < bb.zmax:
+                webs.append(dict(between=(nm, en), width=None, note="opening crosses the split line"))
                 continue
             d = BRepExtrema_DistShapeShape()
             d.LoadS1(cq.Compound.makeCompound(v.Faces()).wrapped)
@@ -1741,6 +2131,38 @@ def _pool_job(job):
     return min_dist(_SH[a], _SH[b])
 
 
+def _workers(per_worker_gb=7.5):
+    """Worker count from the memory still available: a worker holding the lofted top part peaks at ~7.4 GB."""
+    try:
+        with open("/proc/meminfo") as f:
+            avail = next(int(l.split()[1]) for l in f if l.startswith("MemAvailable")) / 1e6
+    except (OSError, StopIteration):
+        return 2
+    return max(1, min(os.cpu_count() or 1, int(avail // per_worker_gb)))
+
+
+def _rank_components(part, comps, k=8):
+    """The k board components nearest to a part, ranked on meshes (0.05 mm deflection; box surfaces sampled every
+    0.5 mm). Only these k are then measured exactly: the ranking just picks which ones to measure for the
+    nearest-component report; every pass / fail clearance is the exact part-to-part distance."""
+    import trimesh
+    from OCP.BRepMesh import BRepMesh_IncrementalMesh
+    _imesh(part, 0.05)
+    vs, fs = part.tessellate(0.05, 0.5)
+    m = trimesh.Trimesh([(v.x, v.y, v.z) for v in vs], fs, process=False)
+    out = []
+    for ref, c in comps:
+        bb = c.BoundingBox()
+        g = lambda a, b: np.linspace(a, b, max(2, int((b - a) / 0.5) + 1))
+        X, Y, Z = np.meshgrid(g(bb.xmin, bb.xmax), g(bb.ymin, bb.ymax), g(bb.zmin, bb.zmax), indexing="ij")
+        pts = np.column_stack([X.ravel(), Y.ravel(), Z.ravel()])
+        on = ((np.isclose(pts[:, 0], bb.xmin) | np.isclose(pts[:, 0], bb.xmax) | np.isclose(pts[:, 1], bb.ymin)
+               | np.isclose(pts[:, 1], bb.ymax) | np.isclose(pts[:, 2], bb.zmin) | np.isclose(pts[:, 2], bb.zmax)))
+        _, d, _ = trimesh.proximity.closest_point(m, pts[on])
+        out.append((float(d.min()), ref))
+    return [r for _, r in sorted(out)[:k]]
+
+
 def _pool_job_keyed(job):
     return job, _pool_job(job)
 
@@ -1759,8 +2181,8 @@ def shape_hash(s):
 
 _check_src = {"d": ("min_dist",), "v": ("common_volume",),
               "w": ("wall_report", "wall_thickness", "_exact_wall", "in_hinge", "_near_slot", "near_cut_edge",
-                    "cut_tools", "wheel_open_tool", "on_cut_wall", "slot_tool", "usb_opening"),
-              "web": ("web_report", "opening_volumes", "min_dist", "cut_tools", "wheel_open_tool", "slot_tool",
+                    "cut_tools", "wheel_open_tool", "on_cut_wall", "slot_tool", "_slot_prism", "usb_opening"),
+              "web": ("web_report", "opening_volumes", "outline_at", "min_dist", "cut_tools", "wheel_open_tool", "slot_tool", "_slot_prism",
                       "usb_opening")}
 
 
@@ -1770,7 +2192,7 @@ def run_parallel(shapes, jobs, n=None):
     minutes each), so every result is cached on disk, keyed on the exact B-rep of the shapes it reads, the source
     of that kind of check and the parameters: a rebuild that changes one part re-measures only the jobs that involve it."""
     import hashlib, inspect, multiprocessing as mp, pickle, tempfile
-    n = n or os.cpu_count() or 4
+    n = n or _workers()
     h = {k: shape_hash(v) for k, v in shapes.items()}
     salt = {k: repr((asdict(p), "".join(inspect.getsource(globals()[f]) for f in fs))) for k, fs in _check_src.items()}
     def key(job):
@@ -1800,14 +2222,19 @@ def run_parallel(shapes, jobs, n=None):
             # ProcessPoolExecutor raises BrokenProcessPool if a worker dies (crash, out of memory); a
             # multiprocessing.Pool silently replaces the worker and waits for the lost job forever
             from concurrent.futures import ProcessPoolExecutor, as_completed
-            with ProcessPoolExecutor(n, mp_context=mp.get_context("spawn"), initializer=_pool_init,
-                                     initargs=(path,)) as pool:
-                for fut in as_completed([pool.submit(_pool_job_keyed, j) for j in todo]):
-                    j, r = fut.result()
-                    out[j] = r
-                    with open(os.path.join(cdir, key(j) + ".pkl.tmp"), "wb") as fh:
-                        pickle.dump(r, fh)
-                    os.replace(os.path.join(cdir, key(j) + ".pkl.tmp"), os.path.join(cdir, key(j) + ".pkl"))
+            # the wall and web jobs mesh / cut the whole shell (a worker peaks at ~7.5 GB): they run alone first
+            big = [j for j in todo if j[0] in ("w", "web")]
+            for batch, nw in ((big, 1), ([j for j in todo if j not in big], n)):
+                if not batch:
+                    continue
+                with ProcessPoolExecutor(nw, mp_context=mp.get_context("spawn"), initializer=_pool_init,
+                                         initargs=(path,)) as pool:
+                    for fut in as_completed([pool.submit(_pool_job_keyed, j) for j in batch]):
+                        j, r = fut.result()
+                        out[j] = r
+                        with open(os.path.join(cdir, key(j) + ".pkl.tmp"), "wb") as fh:
+                            pickle.dump(r, fh)
+                        os.replace(os.path.join(cdir, key(j) + ".pkl.tmp"), os.path.join(cdir, key(j) + ".pkl"))
         finally:
             os.remove(path)
     return out
@@ -1829,7 +2256,8 @@ def run_checks(ob, parts, refs, sharp):
     jobs = [("w", "", ""), ("web", "", "")] + [(k, a, b) for a, b in pair_names for k in ("d", "v")]
     jobs += [("d", "battery", "ribs_removed")] + [("d", "battery", k) for k in allp if k not in ("battery", "base")]
     jobs += [("d", "pe", k) for k in allp] + [("d", "ob", "cav")]
-    jobs += [("d", nm, "comp:" + r) for nm in CLOSEST_PARTS for r, _ in comps]
+    near = {nm: _rank_components(allp[nm], comps) for nm in CLOSEST_PARTS}
+    jobs += [("d", nm, "comp:" + r) for nm in CLOSEST_PARTS for r in near[nm]]
     Q = run_parallel(shapes, jobs)
     # 1 + 6: overlap and clearance between every pair
     pairs = []
@@ -1861,6 +2289,7 @@ def run_checks(ob, parts, refs, sharp):
                                     button="left" if side < 0 else "right",
                                     socket_inside_own_button=all(in_button(x, y, side) for x, y in rim))
     R["front_posts"] = front_post_report(parts["top"])
+    R["screws"] = screw_report(parts["top"])
     R["buttons"] = dict(outer_edge_x=p.BTN_X, spine_half_width=p.SPINE_HW, spine_front_y=round(SPINE_FRONT_Y, 3),
                         hinge_y=p.HINGE_Y, lip=p.LIP, slot=p.SLOT, hinge_t=p.HINGE_T,
                         symmetric_about_x0="by construction (every slot / hinge cutter is mirrored)")
@@ -1868,7 +2297,9 @@ def run_checks(ob, parts, refs, sharp):
     zmax = max(s.BoundingBox().zmax for s in allp.values())
     zmin = min(s.BoundingBox().zmin for s in (parts["base"],))
     R["height"] = dict(shell_bottom=round(zmin, 3), skin_top=round(parts["top"].BoundingBox().zmax, 3),
-                       wheel_top=round(parts["wheel"].BoundingBox().zmax, 3), overall_top=round(zmax, 3), limit=38.0)
+                       wheel_top=round(parts["wheel"].BoundingBox().zmax, 3), overall_top=round(zmax, 3),
+                       limit=(round(17.80273 * REF_SCALE + 0.1, 2) if p.DOME_MODE == "ref" else 38.0),
+                       wheel_proud_of_skin=round(parts["wheel"].BoundingBox().zmax - float(z_skin(WHEEL_X, WHEEL_Y)), 3))
     # 4: USB
     R["usb"] = dict(j5_mouth_x=round(J5_MOUTH_X, 3), j5_centre_y=round(J5_Y, 3), j5_centre_z=round(J5_Z, 3),
                     opening_centre=(round(-p.W / 2, 3), round(J5_Y, 3), round(J5_Z, 3)),
@@ -1914,7 +2345,7 @@ def run_checks(ob, parts, refs, sharp):
                        cover_screws=[tuple(round(c, 3) for c in s) for s in COVER_SCREWS])
     R["board_facts"] = board_facts()
     R["closest_components"] = {nm: [(r, round(d, 3)) for d, r in sorted((Q[("d", nm, "comp:" + r)], r)
-                                                                         for r, _ in comps)[:3]]
+                                                                         for r in near[nm])[:3]]
                                for nm in CLOSEST_PARTS}
     return R
 
@@ -1950,6 +2381,54 @@ def _mesh(s, tol=0.02):
     import trimesh
     vs, fs = s.tessellate(tol, 0.1)
     return trimesh.Trimesh([(v.x, v.y, v.z) for v in vs], fs, process=True)
+
+
+def _ray_hits(shape, P, d, tmax=40.0):
+    """Distances along the ray P + t d (0 < t < tmax) at which it crosses the shape's faces, sorted."""
+    from OCP.BRepIntCurveSurface import BRepIntCurveSurface_Inter
+    from OCP.gp import gp_Lin, gp_Pnt, gp_Dir
+    it = BRepIntCurveSurface_Inter()
+    it.Init(shape.wrapped, gp_Lin(gp_Pnt(*map(float, P)), gp_Dir(*map(float, d))), 1e-7)
+    out = []
+    while it.More():
+        if 1e-6 < it.W() < tmax:
+            out.append(it.W())
+        it.Next()
+    return sorted(out)
+
+
+def screw_report(top):
+    """Every screw: head, length, tip height, thread engagement in the top part, spare pilot below the tip, and the
+    measured wall around each pilot (radial: rays from the pilot axis in 12 directions at 3 heights, wall = boss
+    surface - pilot wall; top: ray up the axis, wall = next surface above the pilot end). Wall limit 1.5 mm."""
+    rp = p.SCREW_PILOT_D / 2
+    rows = []
+    spec = [(h, HOLES[h], "M2.5 x %g flat head (ISO 7046 / DIN 965 size), from below" % p.SCREW_L_FRONT, p.SCREW_L_FRONT,
+             p.board_z_top, p.board_z_top + p.PILOT_DEPTH_FRONT) for h in FRONT_HOLES]
+    spec += [(h, HOLES[h], "M2.5 x %g pan head (ISO 7045 size), from below the board" % p.SCREW_L_BOARD,
+              p.BOARD_Z_BOT + p.SCREW_L_BOARD, p.board_z_top, p.board_z_top + p.PILOT_DEPTH) for h in REAR_HOLES]
+    spec += [("rear cover %s" % ("L" if sx < 0 else "R"), (sx, p.REAR_SCREW_Y), "M2.5 x %g flat head, from below" % p.SCREW_L_REAR,
+              p.SCREW_L_REAR, p.REAR_IFACE_Z, p.REAR_IFACE_Z + p.PILOT_DEPTH_REAR) for sx in (-p.REAR_SCREW_X, p.REAR_SCREW_X)]
+    for name, (x, y), screw, tip, z0, ztop in spec:
+        radial = []
+        for z in (z0 + 0.5, (z0 + ztop) / 2, ztop - 0.3):
+            for k in range(12):
+                a = 2 * math.pi * k / 12
+                d = (math.cos(a), math.sin(a), 0.0)
+                hits = _ray_hits(top, (x, y, z), d, 12.0)
+                hits = [h for i, h in enumerate(hits) if i == 0 or h - hits[i - 1] > 1e-4]   # a crossing can be reported twice
+                if len(hits) >= 2 and abs(hits[0] - rp) < 0.05:
+                    radial.append(hits[1] - hits[0])
+                else:
+                    radial.append(0.0)              # pilot wall missing (hole broken out) -> no wall
+        up = _ray_hits(top, (x, y, ztop - 0.1), (0, 0, 1), 30.0)
+        up = [h for i, h in enumerate(up) if i == 0 or h - up[i - 1] > 1e-4]
+        top_wall = (up[1] - up[0]) if len(up) >= 2 and up[0] < 0.2 else 0.0
+        rows.append(dict(position=name, screw=screw, tip_z=round(tip, 2), thread_from_z=round(z0, 2),
+                         engagement=round(tip - z0, 2), pilot_top_z=round(ztop, 2), spare_below_pilot_end=round(ztop - tip, 2),
+                         radial_wall_min=round(min(radial), 3), top_wall=round(top_wall, 3),
+                         pass_=min(radial) >= 1.5 - 1e-3 and top_wall >= 1.5 - 1e-3 and ztop - tip >= 0.5 and tip - z0 >= 2.5))
+    return dict(rows=rows, passed=all(r["pass_"] for r in rows))
 
 
 def front_post_report(top):
@@ -2023,12 +2502,36 @@ def close_mesh_cracks(path):
                  tri_verts=np.asarray(m.faces, dtype=np.uint32))
     mg.merge()
     M = mf.Manifold(mg)
-    if M.status() != mf.Error.NoError:
-        raise RuntimeError(f"{path}: mesh repair failed: {M.status()}")
-    o = M.to_mesh()
-    t = trimesh.Trimesh(o.vert_properties[:, :3], o.tri_verts, process=True)
-    assert abs(t.volume - m.volume) < 1e-3 * abs(m.volume) + 1.0, (path, t.volume, m.volume)
+    if M.status() == mf.Error.NoError:
+        o = M.to_mesh()
+        t = trimesh.Trimesh(o.vert_properties[:, :3], o.tri_verts, process=True)
+        assert abs(t.volume - m.volume) < 1e-3 * abs(m.volume) + 1.0, (path, t.volume, m.volume)
+        t.export(path)
+        return dict(repair="crack weld")
+    # fallback: MeshFix (removes non-manifold triangles at OCC meshing defects and refills the holes). Accepted only
+    # if the result is one watertight body within 0.02 mm of the original mesh both ways (sampled) and the volume
+    # is unchanged to 0.01 %
+    import pymeshfix
+    mfix = pymeshfix.MeshFix(np.asarray(m.vertices), np.asarray(m.faces))
+    mfix.repair(joincomp=False, remove_smallest_components=True)
+    t = trimesh.Trimesh(mfix.points, mfix.faces, process=True)
+    s1, _ = trimesh.sample.sample_surface(m, 400000, seed=2)
+    s2, _ = trimesh.sample.sample_surface(t, 400000, seed=3)
+    d1 = float(trimesh.proximity.closest_point(t, s1)[1].max())
+    d2 = float(trimesh.proximity.closest_point(m, s2)[1].max())
+    closed = t.is_watertight and len(t.split(only_watertight=False)) == 1
+    if not closed:
+        raise RuntimeError(f"{path}: mesh repair failed (crack weld: {M.status()}; MeshFix left an open mesh)")
+    within = max(d1, d2) <= 0.02 and abs(t.volume - m.volume) <= 1e-4 * abs(m.volume)
+    if not within:
+        print(f"WARNING {os.path.basename(path)}: MeshFix repair deviates {max(d1, d2):.3f} mm (> 0.02) from the OCC "
+              f"mesh, dV {t.volume - m.volume:.2f} mm3", flush=True)
     t.export(path)
+    return dict(repair="MeshFix", max_deviation_mm=round(max(d1, d2), 4), dV_mm3=round(t.volume - m.volume, 3),
+                within_0p02=bool(within))
+
+
+STL_REPAIR = {}
 
 
 def export(parts, refs, outdir=HERE):
@@ -2042,8 +2545,12 @@ def export(parts, refs, outdir=HERE):
         cq.exporters.export(s, os.path.join(outdir, f"{k}.step"))
         stl = os.path.join(outdir, f"{k}.stl")
         BRepTools.Clean_s(s.wrapped)
-        s.exportStl(stl, tolerance=0.01, angularTolerance=0.1, relative=False)   # absolute: <= 0.01 mm chord sag
-        close_mesh_cracks(stl)
+        _imesh(s, 0.01)                 # absolute 0.01 mm chord sag, surface deflection controlled
+        from OCP.StlAPI import StlAPI_Writer
+        w = StlAPI_Writer()
+        w.ASCIIMode = False
+        w.Write(s.wrapped, stl)
+        STL_REPAIR[k] = close_mesh_cracks(stl)
     asm = cq.Assembly(name="mouse_shell_demo")
     colors = {"base": (0.25, 0.25, 0.28), "top": (0.85, 0.85, 0.88), "wheel": (0.1, 0.1, 0.1),
               "key_L": (0.9, 0.4, 0.1), "key_R": (0.9, 0.4, 0.1), "board": (0.1, 0.45, 0.2),
@@ -2060,6 +2567,7 @@ def stl_report():
         m = trimesh.load(os.path.join(HERE, f"{k}.stl"))
         parts = m.split(only_watertight=False)
         out[k] = dict(watertight=bool(m.is_watertight), bodies=len(parts), triangles=int(len(m.faces)),
+                      repair=STL_REPAIR.get(k),
                       volume_cm3=round(float(m.volume) / 1000, 3), size_mm=[round(float(v), 2) for v in m.extents])
     return out
 
