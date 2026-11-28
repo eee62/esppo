@@ -359,12 +359,14 @@ def sdf_mesh(name, recipe, voxel=0.2, band=20, coll="work", adaptivity=0.0):
             n = N.new("GeometryNodeSDFGridBoolean")
             n.operation = {"union": "UNION", "diff": "DIFFERENCE", "inter": "INTERSECT"}[op]
             a, b = ev(r[1]), ev(r[2])
-            if op == "diff":
+            if op == "diff":                     # Grid 1 minus Grid 2
                 L.new(a, _sock(n, "Grid 1"))
                 L.new(b, _sock(n, "Grid 2"))
-            else:
-                L.new(b, _sock(n, "Grid"))
-                L.new(a, _sock(n, "Grid"))
+            else:                                # union / intersect: both into the enabled multi-input socket
+                mi = [s_ for s_ in n.inputs if s_.is_multi_input and s_.enabled] or \
+                     [s_ for s_ in n.inputs if s_.is_multi_input]
+                L.new(a, mi[0])
+                L.new(b, mi[0])
         elif op == "offset":
             n = N.new("GeometryNodeSDFGridOffset")
             L.new(ev(r[1]), _sock(n, "Grid"))
@@ -384,7 +386,7 @@ def sdf_mesh(name, recipe, voxel=0.2, band=20, coll="work", adaptivity=0.0):
             _sock(n, "Iterations").default_value = r[3]
         else:
             raise ValueError(op)
-        s = _sock(n, "Grid", True)
+        s = _sock(n, "SDF Grid" if op == "mesh" else "Grid", True)
         cache[k] = s
         return s
 
@@ -507,3 +509,81 @@ def biharmonic_fill(Z, mask, iters=4000, tol=1e-7):
     out = Z.copy()
     out[mask] = x
     return out, k
+
+
+def _png_mask(path):
+    img = bpy.data.images.load(path, check_existing=False)
+    w, h = img.size
+    px = np.empty(w * h * 4, np.float32)
+    img.pixels.foreach_get(px)
+    bpy.data.images.remove(img)
+    return px.reshape(h, w, 4)[:, :, 0] > 0.5
+
+
+def _ray_mask(o, axis, u, v, far=500.0):
+    """Silhouette of o along +/- a world axis: True where a ray through (u, v) hits it (BVH ray cast)."""
+    from mathutils.bvhtree import BVHTree
+    bvh = BVHTree.FromObject(o, bpy.context.evaluated_depsgraph_get())
+    a = {"x": 0, "y": 1, "z": 2}[axis]
+    iu, iv = [k for k in range(3) if k != a]
+    d = [0.0, 0.0, 0.0]; d[a] = -1.0
+    D = Vector(d)
+    M = np.zeros((len(u), len(v)), bool)
+    for i, uu in enumerate(u):
+        for j, vv in enumerate(v):
+            p = [0.0, 0.0, 0.0]; p[a] = far; p[iu] = uu; p[iv] = vv
+            M[i, j] = bvh.ray_cast(Vector(p), D)[0] is not None
+    return M
+
+
+SIL_AXIS = {"top": "z", "side": "x", "front": "y"}
+
+
+def silhouette_compare(a, b, view, out_png, px=0.25):
+    """Silhouettes of a (ours) and b (reference) projected along the view axis (top: z, side: x, front: y), from BVH
+    ray casts on a px grid. Returns IoU and the areas (mm^2) in only one of them; writes a colour overlay
+    (grey both, blue ours only, red reference only)."""
+    ax = SIL_AXIS[view]
+    k = {"x": 0, "y": 1, "z": 2}[ax]
+    iu, iv = [q for q in range(3) if q != k]
+    P = np.vstack([np.array([o.matrix_world @ Vector(c) for c in o.bound_box]) for o in (a, b)])
+    lo, hi = P.min(0) - 2, P.max(0) + 2
+    u = np.arange(lo[iu], hi[iu], px)
+    v = np.arange(lo[iv], hi[iv], px)
+    A, B = _ray_mask(a, ax, u, v), _ray_mask(b, ax, u, v)
+    inter, union = (A & B).sum(), (A | B).sum()
+    img = np.ones(A.shape + (4,), np.float32)
+    img[A & B, :3] = (0.55, 0.55, 0.58)
+    img[A & ~B, :3] = (0.15, 0.35, 0.95)
+    img[~A & B, :3] = (0.95, 0.2, 0.15)
+    # image rows = v (up), columns = u; Blender images start at the bottom row
+    if view == "front":
+        img = img[::-1]                 # seen from the front (+y): shell +x on the image left
+    im = bpy.data.images.new("overlay", A.shape[0], A.shape[1], alpha=True)
+    im.pixels.foreach_set(np.ascontiguousarray(img.transpose(1, 0, 2)).ravel())
+    im.filepath_raw = out_png
+    im.file_format = "PNG"
+    im.save()
+    bpy.data.images.remove(im)
+    return dict(view=view, iou=round(float(inter / union), 4), ours_only_mm2=round(float((A & ~B).sum() * px * px), 1),
+                ref_only_mm2=round(float((~A & B).sum() * px * px), 1), ours_mm2=round(float(A.sum() * px * px), 1),
+                ref_mm2=round(float(B.sum() * px * px), 1), px_mm=px)
+
+
+def surface_deviation(o, ref, n=60000, seed=1, exclude=None):
+    """Signed distance (mm, + outside the reference) from n vertices of o to the reference surface (BVH nearest)."""
+    from mathutils.bvhtree import BVHTree
+    bvh = BVHTree.FromObject(ref, bpy.context.evaluated_depsgraph_get())
+    V = verts(o)
+    rng = np.random.default_rng(seed)
+    V = V[rng.choice(len(V), min(n, len(V)), replace=False)]
+    if exclude is not None:
+        V = V[~exclude(V)]
+    d = np.empty(len(V))
+    for i, p in enumerate(V):
+        co, nrm, _, dist = bvh.find_nearest(Vector(p))
+        d[i] = dist if (Vector(p) - co).dot(nrm) > 0 else -dist
+    a = np.abs(d)
+    return dict(samples=len(d), mean_abs=round(float(a.mean()), 3), p50=round(float(np.percentile(a, 50)), 3),
+                p95=round(float(np.percentile(a, 95)), 3), p99=round(float(np.percentile(a, 99)), 3),
+                max_out=round(float(d.max()), 3), max_in=round(float(-d.min()), 3))
